@@ -20,6 +20,8 @@ import { getOnboardingSteps } from "@/services/onboardingService";
 import { Loader2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 export default function OnboardingPage() {
@@ -30,6 +32,7 @@ export default function OnboardingPage() {
     const [loadingSteps, setLoadingSteps] = useState(false);
     const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
     const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
+    const [showCompleted, setShowCompleted] = useState(false);
 
     useEffect(() => {
         async function fetchProducts() {
@@ -95,6 +98,12 @@ export default function OnboardingPage() {
                             ))}
                         </SelectContent>
                     </Select>
+                    
+                    <div className="flex items-center space-x-2">
+                        <Switch id="show-completed" checked={showCompleted} onCheckedChange={setShowCompleted} />
+                        <Label htmlFor="show-completed" className="text-sm font-normal">Mostrar concluídas</Label>
+                    </div>
+
                     <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -118,43 +127,49 @@ export default function OnboardingPage() {
                         ) : onboardingSteps.length > 0 ? (
                             <ScrollArea className="w-full h-full whitespace-nowrap p-4 md:p-8">
                                 <div className="flex w-max space-x-4 pb-4">
-                                    {days.map(day => (
-                                        <div key={day} className="flex flex-col gap-4 min-w-[300px] max-w-[320px]">
-                                            <div className="font-semibold p-2 bg-muted rounded-md text-center sticky top-0">
-                                                Dia {day}
+                                    {days.map(day => {
+                                        const stepsForDay = (stepsByDay[day] || []).filter(step => {
+                                            return showCompleted || !checkedSteps.has(step.id);
+                                        });
+
+                                        return (
+                                            <div key={day} className="flex flex-col gap-4 min-w-[300px] max-w-[320px]">
+                                                <div className="font-semibold p-2 bg-muted rounded-md text-center sticky top-0">
+                                                    Dia {day}
+                                                </div>
+                                                <div className="flex flex-col gap-4">
+                                                    {stepsForDay.map(step => (
+                                                        <Card key={step.id} className={checkedSteps.has(step.id) ? 'bg-muted/50' : ''}>
+                                                            <CardHeader>
+                                                                <CardTitle className="flex items-start gap-3 text-base whitespace-normal">
+                                                                    <Checkbox
+                                                                        id={`step-${step.id}`}
+                                                                        checked={checkedSteps.has(step.id)}
+                                                                        onCheckedChange={() => handleCheckChange(step.id)}
+                                                                        className="h-5 w-5 mt-0.5 shrink-0"
+                                                                    />
+                                                                    <label 
+                                                                        htmlFor={`step-${step.id}`}
+                                                                        className={`cursor-pointer ${checkedSteps.has(step.id) ? 'line-through text-muted-foreground' : ''}`}
+                                                                    >
+                                                                        {step.title}
+                                                                    </label>
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <p className="text-sm text-muted-foreground whitespace-normal">{step.description}</p>
+                                                            </CardContent>
+                                                        </Card>
+                                                    ))}
+                                                    {stepsForDay.length === 0 && (
+                                                        <div className="text-center text-sm text-muted-foreground p-4 border border-dashed rounded-lg h-24 flex items-center justify-center">
+                                                            Nenhuma tarefa.
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col gap-4">
-                                                {(stepsByDay[day] || []).map(step => (
-                                                    <Card key={step.id} className={checkedSteps.has(step.id) ? 'bg-muted/50' : ''}>
-                                                        <CardHeader>
-                                                            <CardTitle className="flex items-start gap-3 text-base whitespace-normal">
-                                                                <Checkbox
-                                                                    id={`step-${step.id}`}
-                                                                    checked={checkedSteps.has(step.id)}
-                                                                    onCheckedChange={() => handleCheckChange(step.id)}
-                                                                    className="h-5 w-5 mt-0.5 shrink-0"
-                                                                />
-                                                                <label 
-                                                                    htmlFor={`step-${step.id}`}
-                                                                    className={`cursor-pointer ${checkedSteps.has(step.id) ? 'line-through text-muted-foreground' : ''}`}
-                                                                >
-                                                                    {step.title}
-                                                                </label>
-                                                            </CardTitle>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <p className="text-sm text-muted-foreground whitespace-normal">{step.description}</p>
-                                                        </CardContent>
-                                                    </Card>
-                                                ))}
-                                                {(!stepsByDay[day] || stepsByDay[day].length === 0) && (
-                                                    <div className="text-center text-sm text-muted-foreground p-4 border border-dashed rounded-lg h-24 flex items-center justify-center">
-                                                        Nenhuma tarefa.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                                 <ScrollBar orientation="horizontal" />
                             </ScrollArea>
