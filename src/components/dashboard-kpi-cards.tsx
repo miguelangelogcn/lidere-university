@@ -5,26 +5,26 @@ export function DashboardKpiCards() {
     const kpiData = [
         {
             title: "Receita Total",
-            value: "R$ 125.430,00",
-            description: "+20.1% do último mês",
+            value: "R$ 0,00",
+            description: "Nenhum dado para o período",
             icon: DollarSign,
         },
         {
             title: "Novos Leads",
-            value: "+1,234",
-            description: "+180.1% do último mês",
+            value: "0",
+            description: "Nenhum dado para o período",
             icon: Users,
         },
         {
             title: "Negócios Fechados",
-            value: "+42",
-            description: "+35% do último mês",
+            value: "0",
+            description: "Nenhum dado para o período",
             icon: CreditCard,
         },
         {
             title: "Taxa de Conversão",
-            value: "12.5%",
-            description: "+2.1% do último mês",
+            value: "0%",
+            description: "Nenhum dado para o período",
             icon: Activity,
         },
     ]

@@ -4,22 +4,9 @@ import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Toolti
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
-const salesData = [
-  { month: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
-  { month: "Fev", total: Math.floor(Math.random() * 5000) + 1000 },
-  { month: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
-  { month: "Abr", total: Math.floor(Math.random() * 5000) + 1000 },
-  { month: "Mai", total: Math.floor(Math.random() * 5000) + 1000 },
-  { month: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
-];
+const salesData: { month: string, total: number }[] = [];
 
-const dealStageData = [
-    { name: 'Prospecção', value: 400 },
-    { name: 'Qualificação', value: 300 },
-    { name: 'Proposta', value: 300 },
-    { name: 'Negociação', value: 200 },
-    { name: 'Fechado Ganho', value: 278 },
-];
+const dealStageData: { name: string, value: number }[] = [];
 
 const COLORS = ['#FFC700', '#FAFAFA', '#A1A1AB', '#71717A', '#3F3F46'];
 

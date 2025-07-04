@@ -45,27 +45,35 @@ export default function ContactsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockContacts.map((contact) => (
-                <TableRow key={contact.id}>
-                  <TableCell className="hidden sm:table-cell">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint="person" />
-                      <AvatarFallback>{contact.initials}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-medium">{contact.name}</TableCell>
-                  <TableCell>
-                    <Badge variant={contact.status === 'customer' ? 'default' : 'secondary'}>
-                        {contact.status === 'lead' ? 'Lead' : 'Cliente'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">{contact.company}</TableCell>
-                  <TableCell className="hidden md:table-cell">{contact.email}</TableCell>
-                  <TableCell>
-                    {/* Actions dropdown can be added here */}
+              {mockContacts.length > 0 ? (
+                mockContacts.map((contact) => (
+                  <TableRow key={contact.id}>
+                    <TableCell className="hidden sm:table-cell">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint="person" />
+                        <AvatarFallback>{contact.initials}</AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={contact.status === 'customer' ? 'default' : 'secondary'}>
+                          {contact.status === 'lead' ? 'Lead' : 'Cliente'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{contact.company}</TableCell>
+                    <TableCell className="hidden md:table-cell">{contact.email}</TableCell>
+                    <TableCell>
+                      {/* Actions dropdown can be added here */}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    Nenhum contato encontrado.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
