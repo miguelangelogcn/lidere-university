@@ -5,6 +5,7 @@ import {
   LineChart,
   Sparkles,
   Users,
+  KanbanSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ export const appModules: Module[] = [
       { href: "/pipeline", icon: LineChart, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },
       { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
+      { href: "/pipelines", icon: KanbanSquare, label: "Gerenciar Funis" },
     ],
   },
   {

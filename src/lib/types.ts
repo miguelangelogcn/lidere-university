@@ -9,16 +9,25 @@ export type Contact = {
   initials: string;
 };
 
-export type DealStage = 'Prospecção' | 'Qualificação' | 'Proposta' | 'Negociação' | 'Fechado Ganho' | 'Fechado Perdido';
+export type PipelineStage = {
+    id: string;
+    name: string;
+    order: number;
+}
 
-export const dealStages: DealStage[] = ['Prospecção', 'Qualificação', 'Proposta', 'Negociação', 'Fechado Ganho', 'Fechado Perdido'];
+export type Pipeline = {
+    id: string;
+    name: string;
+    stages: PipelineStage[];
+}
 
 export type Opportunity = {
   id: string;
   title: string;
   contactName: string;
   value: number;
-  stage: DealStage;
+  pipelineId: string;
+  stageId: string;
 };
 
 export type Notification = {
