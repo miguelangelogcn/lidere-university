@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { Tag } from '@/lib/types';
 import { updateTag } from '@/services/tagService';
@@ -12,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const tagSchema = z.object({
   name: z.string().min(1, 'O nome da tag é obrigatório.'),
+  description: z.string().optional(),
 });
 
 type TagFormValues = z.infer<typeof tagSchema>;
@@ -28,6 +30,7 @@ export function EditTagForm({ tag, onSuccess }: EditTagFormProps) {
     resolver: zodResolver(tagSchema),
     defaultValues: {
       name: tag.name,
+      description: tag.description || '',
     },
   });
 
@@ -52,6 +55,19 @@ export function EditTagForm({ tag, onSuccess }: EditTagFormProps) {
               <FormLabel>Nome da Tag</FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Descreva a finalidade desta tag..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

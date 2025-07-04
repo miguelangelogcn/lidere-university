@@ -9,6 +9,7 @@ function docToTag(doc: DocumentData): Tag {
     return {
         id: doc.id,
         name: data.name || '',
+        description: data.description || '',
     };
 }
 
@@ -27,7 +28,7 @@ export async function getTags(): Promise<Tag[]> {
   }
 }
 
-export async function createTag(data: { name: string }): Promise<void> {
+export async function createTag(data: { name: string, description?: string }): Promise<void> {
     try {
         const tagsCollection = collection(db, 'tags');
         await addDoc(tagsCollection, data);
@@ -38,7 +39,7 @@ export async function createTag(data: { name: string }): Promise<void> {
 }
 
 
-export async function updateTag(tagId: string, data: { name: string }): Promise<void> {
+export async function updateTag(tagId: string, data: { name: string, description?: string }): Promise<void> {
     try {
         const tagDocRef = doc(db, 'tags', tagId);
         await updateDoc(tagDocRef, data);

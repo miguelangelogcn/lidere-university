@@ -99,7 +99,7 @@ export default function TagsPage() {
                             </span>
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>Adicionar Nova Tag</DialogTitle>
                           <DialogDescription>
@@ -116,6 +116,7 @@ export default function TagsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome da Tag</TableHead>
+                <TableHead>Descrição</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -124,7 +125,7 @@ export default function TagsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                    <TableCell colSpan={2} className="h-24 text-center">
+                    <TableCell colSpan={3} className="h-24 text-center">
                         Carregando...
                     </TableCell>
                 </TableRow>
@@ -132,6 +133,7 @@ export default function TagsPage() {
                 tags.map((tag) => (
                   <TableRow key={tag.id}>
                     <TableCell className="font-medium">{tag.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{tag.description || 'N/A'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -155,7 +157,7 @@ export default function TagsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="h-24 text-center">
+                  <TableCell colSpan={3} className="h-24 text-center">
                     Nenhuma tag encontrada.
                   </TableCell>
                 </TableRow>
@@ -166,12 +168,12 @@ export default function TagsPage() {
       </main>
 
       {/* Edit Tag Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { !open && setSelectedTag(null); setIsEditDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) setSelectedTag(null); setIsEditDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Tag</DialogTitle>
             <DialogDescription>
-              Altere o nome da tag.
+              Altere o nome e a descrição da tag.
             </DialogDescription>
           </DialogHeader>
           {selectedTag && <EditTagForm tag={selectedTag} onSuccess={handleSuccess} />}
@@ -179,7 +181,7 @@ export default function TagsPage() {
       </Dialog>
       
       {/* Delete Tag Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { !open && setSelectedTag(null); setIsDeleteDialogOpen(open); }}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { if (!open) setSelectedTag(null); setIsDeleteDialogOpen(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
