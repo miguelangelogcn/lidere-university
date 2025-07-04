@@ -5,8 +5,7 @@ export type Contact = {
   company: string;
   phone: string;
   status: 'lead' | 'customer' | 'archived';
-  avatarUrl: string;
-  initials: string;
+  avatarUrl?: string | null;
 };
 
 export type PipelineStage = {
