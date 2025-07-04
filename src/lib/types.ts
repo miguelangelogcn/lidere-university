@@ -83,3 +83,13 @@ export type Onboarding = {
   productName: string;
   steps: OnboardingStep[];
 };
+
+export type Delivery = {
+  id: string;
+  contactId: string;
+  contactName: string;
+  productId: string;
+  productName: string;
+  status: 'todo' | 'doing' | 'done';
+  onboardingProgress: Record<string, boolean>; // { [stepId]: checked }
+};
