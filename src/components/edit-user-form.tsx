@@ -1,9 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,18 +13,24 @@ import {
 } from "@/components/ui/accordion";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ChevronDown } from 'lucide-react';
+import type { AppUser } from '@/lib/types';
+import { updateUser } from '@/services/userService';
 
-type AddUserFormProps = {
-  onUserAdded: () => void;
+type EditUserFormProps = {
+  user: AppUser;
+  onUserUpdated: () => void;
 };
 
-export function AddUserForm({ onUserAdded }: AddUserFormProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [permissions, setPermissions] = useState<string[]>([]);
+export function EditUserForm({ user, onUserUpdated }: EditUserFormProps) {
+  const [name, setName] = useState(user.name || '');
+  const [permissions, setPermissions] = useState<string[]>(user.permissions || []);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setName(user.name || '');
+    setPermissions(user.permissions || []);
+  }, [user]);
 
   const handlePermissionChange = (href: string, checked: boolean) => {
     setPermissions(prev => {
@@ -39,73 +42,50 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
     });
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        name: name,
-        avatarUrl: null,
-        permissions: permissions,
+      await updateUser(user.id, {
+        name,
+        permissions,
       });
-
-      onUserAdded();
+      onUserUpdated();
     } catch (err: any) {
-        if (err.code === 'auth/email-already-in-use') {
-            setError('Este email já está em uso.');
-        } else if (err.code === 'auth/weak-password') {
-            setError('A senha deve ter pelo menos 6 caracteres.');
-        } else {
-            setError('Falha ao criar conta. Tente novamente.');
-        }
+      setError(err.message || 'Falha ao atualizar usuário.');
       console.error(err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSignup} className="grid gap-4 py-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
       <div className="grid gap-2">
-        <Label htmlFor="name">Nome</Label>
+        <Label htmlFor="email-edit">Email</Label>
         <Input
-          id="name"
+          id="email-edit"
+          type="email"
+          value={user.email || ''}
+          disabled
+          className="disabled:opacity-100"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="name-edit">Nome</Label>
+        <Input
+          id="name-edit"
           type="text"
-          placeholder="Nome completo do usuário"
+          placeholder="Nome do usuário"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="m@example.com"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="password">Senha</Label>
-        <Input
-          id="password"
-          type="password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
        <div className="grid gap-4">
           <Label>Módulos de Acesso</Label>
-          <Accordion type="multiple" className="w-full">
+          <Accordion type="multiple" className="w-full" defaultValue={appModules.map(m => m.id)}>
             {appModules.map((module) => {
               const allModuleItems = module.items.map((item) => item.href);
               const isAllSelected = allModuleItems.every((href) => permissions.includes(href));
@@ -126,7 +106,7 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
                   <AccordionPrimitive.Header className="flex w-full items-center">
                     <div className="pl-3 pr-2 py-2">
                       <Checkbox
-                        id={`module-${module.id}`}
+                        id={`edit-module-${module.id}`}
                         checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
                         onCheckedChange={handleModuleSelection}
                       />
@@ -143,11 +123,11 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
                           {module.items.map((item) => (
                               <div key={item.href} className="flex items-center space-x-3">
                                   <Checkbox
-                                      id={item.href}
+                                      id={`edit-${item.href}`}
                                       checked={permissions.includes(item.href)}
                                       onCheckedChange={(checked) => handlePermissionChange(item.href, !!checked)}
                                   />
-                                  <Label htmlFor={item.href} className="font-normal cursor-pointer">
+                                  <Label htmlFor={`edit-${item.href}`} className="font-normal cursor-pointer">
                                       {item.label}
                                   </Label>
                               </div>
@@ -161,7 +141,7 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
       </div>
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
       <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>
-        {loading ? 'Criando...' : 'Criar Conta'}
+        {loading ? 'Salvando...' : 'Salvar Alterações'}
       </Button>
     </form>
   );

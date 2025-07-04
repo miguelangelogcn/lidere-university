@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { AppUser } from '@/lib/types';
-import { collection, getDocs, type DocumentData } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 function docToAppUser(doc: DocumentData): AppUser {
     const data = doc.data();
@@ -28,4 +28,27 @@ export async function getUsers(): Promise<AppUser[]> {
     console.error("Error fetching users: ", error);
     return [];
   }
+}
+
+export async function updateUser(userId: string, data: { name: string, permissions: string[] }): Promise<void> {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            name: data.name,
+            permissions: data.permissions
+        });
+    } catch (error) {
+        console.error("Error updating user: ", error);
+        throw new Error("Falha ao atualizar usuário.");
+    }
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await deleteDoc(userDocRef);
+    } catch (error) {
+        console.error("Error deleting user: ", error);
+        throw new Error("Falha ao excluir usuário.");
+    }
 }

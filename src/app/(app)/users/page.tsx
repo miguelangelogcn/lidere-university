@@ -11,10 +11,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getUsers } from "@/services/userService";
+import { getUsers, deleteUser } from "@/services/userService";
 import type { AppUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { AddUserForm } from "@/components/add-user-form";
+import { EditUserForm } from "@/components/edit-user-form";
+import { useToast } from "@/hooks/use-toast";
 
 function getInitials(name: string | null) {
     if (!name) return 'U';
@@ -37,7 +56,11 @@ function getInitials(name: string | null) {
 export default function UsersPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
+  const { toast } = useToast();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -51,8 +74,30 @@ export default function UsersPage() {
   }, []);
 
   const handleUserAdded = () => {
-    setIsDialogOpen(false);
+    setIsAddDialogOpen(false);
     fetchUsers();
+    toast({ title: "Sucesso!", description: "Usuário adicionado com sucesso." });
+  };
+
+  const handleUserUpdated = () => {
+    setIsEditDialogOpen(false);
+    setSelectedUser(null);
+    fetchUsers();
+    toast({ title: "Sucesso!", description: "Usuário atualizado com sucesso." });
+  };
+  
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    try {
+        await deleteUser(selectedUser.id);
+        toast({ title: "Sucesso!", description: "Usuário excluído com sucesso." });
+        fetchUsers();
+    } catch (error) {
+        toast({ variant: "destructive", title: "Erro!", description: "Falha ao excluir o usuário." });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setSelectedUser(null);
+    }
   };
 
   return (
@@ -61,7 +106,7 @@ export default function UsersPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center">
             <div className="ml-auto flex items-center gap-2">
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
                             <PlusCircle className="h-3.5 w-3.5" />
@@ -115,7 +160,23 @@ export default function UsersPage() {
                     <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
                     <TableCell>{user.email || 'N/A'}</TableCell>
                     <TableCell>
-                      {/* Actions dropdown can be added here */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Menu de ações</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem onSelect={() => { setSelectedUser(user); setIsEditDialogOpen(true); }}>
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedUser(user); setIsDeleteDialogOpen(true); }}>
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -130,6 +191,37 @@ export default function UsersPage() {
           </Table>
         </div>
       </main>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { !open && setSelectedUser(null); setIsEditDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>
+              Altere os dados do usuário. A senha não pode ser alterada aqui.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && <EditUserForm user={selectedUser} onUserUpdated={handleUserUpdated} />}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { !open && setSelectedUser(null); setIsDeleteDialogOpen(open); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação não pode ser desfeita. Isso irá excluir permanentemente o usuário <span className="font-bold">{selectedUser?.email}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
