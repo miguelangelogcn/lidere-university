@@ -2,24 +2,35 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import {
-  Bell,
   Contact,
   Home,
   LineChart,
+  LogOut,
   Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { AuthGuard } from "@/context/auth-provider";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Painel de Desempenho" },
     { href: "/pipeline", icon: LineChart, label: "Funil de Vendas" },
     { href: "/contacts", icon: Contact, label: "Contatos" },
     { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
   ];
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
 
   return (
     <AuthGuard>
@@ -50,6 +61,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
               </nav>
+            </div>
+            <div className="mt-auto p-4 border-t">
+               <Button onClick={handleLogout} variant="ghost" className="w-full justify-start">
+                 <LogOut className="h-4 w-4 mr-2" />
+                 Sair
+               </Button>
             </div>
           </div>
         </div>

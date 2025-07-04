@@ -1,8 +1,5 @@
 'use client';
 
-import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,13 +24,6 @@ type MainHeaderProps = {
 }
 
 export function MainHeader({ title }: MainHeaderProps) {
-  const router = useRouter();
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
-
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
       
@@ -89,8 +79,6 @@ export function MainHeader({ title }: MainHeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem>Configurações</DropdownMenuItem>
             <DropdownMenuItem>Suporte</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
