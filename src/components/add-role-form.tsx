@@ -51,7 +51,7 @@ export function AddRoleForm({ onRoleAdded }: AddRoleFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
       <div className="grid gap-2">
         <Label htmlFor="name">Nome do Cargo</Label>
         <Input
