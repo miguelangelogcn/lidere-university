@@ -73,6 +73,7 @@ export type OnboardingStep = {
   id: string;
   title: string;
   description: string;
+  day: number; // 0-7
   order: number;
 };
 

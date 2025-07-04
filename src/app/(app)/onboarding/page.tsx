@@ -13,11 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getProducts } from "@/services/productService";
 import type { Product, OnboardingStep } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Settings, CheckSquare } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ManageOnboardings } from "@/components/manage-onboardings";
 import { getOnboardingSteps } from "@/services/onboardingService";
-import { CheckCircle, Circle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 
 export default function OnboardingPage() {
@@ -38,26 +39,32 @@ export default function OnboardingPage() {
         fetchProducts();
     }, []);
 
+    const fetchOnboarding = async (productId: string | null) => {
+        if (!productId) {
+            setOnboardingSteps([]);
+            return;
+        };
+        setLoadingSteps(true);
+        const steps = await getOnboardingSteps(productId);
+        setOnboardingSteps(steps);
+        setLoadingSteps(false);
+    }
+
     useEffect(() => {
-        async function fetchSteps() {
-            if (!selectedProductId) {
-                setOnboardingSteps([]);
-                return;
-            };
-            setLoadingSteps(true);
-            const steps = await getOnboardingSteps(selectedProductId);
-            setOnboardingSteps(steps);
-            setLoadingSteps(false);
-        }
-        fetchSteps();
+        fetchOnboarding(selectedProductId);
     }, [selectedProductId]);
 
     const handleSuccess = () => {
         setIsManageDialogOpen(false);
-        // Maybe refetch something if needed
+        fetchOnboarding(selectedProductId);
     }
+    
+    const stepsByDay = onboardingSteps.reduce((acc, step) => {
+        (acc[step.day] = acc[step.day] || []).push(step);
+        return acc;
+    }, {} as Record<number, OnboardingStep[]>);
 
-    const selectedProduct = products.find(p => p.id === selectedProductId);
+    const days = Array.from({ length: 8 }, (_, i) => i); // D0 to D7
 
     return (
         <>
@@ -86,45 +93,55 @@ export default function OnboardingPage() {
                     </Dialog>
                 </div>
             </MainHeader>
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <main className="flex-1 overflow-hidden">
                 {selectedProductId ? (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Onboarding para: {selectedProduct?.name}</CardTitle>
-                            <CardDescription>
-                                Acompanhe os passos para a integração deste cliente.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {loadingSteps ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                                </div>
-                            ) : onboardingSteps.length > 0 ? (
-                                <div className="space-y-6">
-                                    {onboardingSteps.map((step, index) => (
-                                        <div key={step.id} className="flex items-start gap-4">
-                                            <div className="flex flex-col items-center">
-                                                <Circle className="h-6 w-6 text-primary" />
-                                                {index < onboardingSteps.length - 1 && <div className="h-12 w-px bg-border my-1" />}
+                     <>
+                        {loadingSteps ? (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : onboardingSteps.length > 0 ? (
+                            <ScrollArea className="w-full h-full whitespace-nowrap p-4 md:p-8">
+                                <div className="flex w-max space-x-4 pb-4">
+                                    {days.map(day => (
+                                        <div key={day} className="flex flex-col gap-4 min-w-[300px] max-w-[320px]">
+                                            <div className="font-semibold p-2 bg-muted rounded-md text-center sticky top-0">
+                                                Dia {day}
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold">{step.title}</h3>
-                                                <p className="text-muted-foreground text-sm">{step.description}</p>
+                                            <div className="flex flex-col gap-4">
+                                                {(stepsByDay[day] || []).map(step => (
+                                                    <Card key={step.id}>
+                                                        <CardHeader>
+                                                            <CardTitle className="flex items-start gap-3 text-base whitespace-normal">
+                                                                <CheckSquare className="h-5 w-5 mt-0.5 text-primary shrink-0"/>
+                                                                <span>{step.title}</span>
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <p className="text-sm text-muted-foreground whitespace-normal">{step.description}</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                                {(!stepsByDay[day] || stepsByDay[day].length === 0) && (
+                                                    <div className="text-center text-sm text-muted-foreground p-4 border border-dashed rounded-lg h-24 flex items-center justify-center">
+                                                        Nenhuma tarefa.
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            ) : (
-                                <div className="text-center py-12">
-                                    <h3 className="text-lg font-semibold">Nenhum passo de onboarding</h3>
-                                    <p className="text-muted-foreground">Configure os passos de onboarding para este produto no gerenciador.</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                                <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
+                        ) : (
+                            <div className="text-center py-12 flex flex-col items-center justify-center h-full">
+                                <h3 className="text-lg font-semibold">Nenhum passo de onboarding</h3>
+                                <p className="text-muted-foreground">Configure os passos de onboarding para este produto no gerenciador.</p>
+                            </div>
+                        )}
+                    </>
                 ) : (
-                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm h-full">
                         <div className="flex flex-col items-center gap-2 text-center">
                             <h2 className="text-2xl font-bold tracking-tight">Selecione um Produto</h2>
                             <p className="text-muted-foreground">

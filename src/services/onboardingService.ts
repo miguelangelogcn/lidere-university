@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Onboarding, OnboardingStep } from '@/lib/types';
-import { collection, doc, getDoc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 
 // The document ID for an onboarding will be the product ID.
 const onboardingCollection = collection(db, 'onboardings');
@@ -14,7 +14,8 @@ export async function getOnboardingSteps(productId: string): Promise<OnboardingS
 
     if (docSnap.exists()) {
       const data = docSnap.data() as Onboarding;
-      return (data.steps || []).sort((a, b) => a.order - b.order);
+      // Sort by day, then by the order within the day
+      return (data.steps || []).sort((a, b) => a.day - b.day || a.order - b.order);
     }
     return [];
   } catch (error) {
