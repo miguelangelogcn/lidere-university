@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 import {
   Table,
@@ -10,6 +11,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUsers } from "@/services/userService";
 import type { AppUser } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 
 function getInitials(name: string | null) {
     if (!name) return 'U';
@@ -27,6 +30,18 @@ export default async function UsersPage() {
     <>
       <MainHeader title="Gerenciar Usuários" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex items-center">
+            <div className="ml-auto flex items-center gap-2">
+                <Link href="/signup">
+                    <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                            Adicionar Usuário
+                        </span>
+                    </Button>
+                </Link>
+            </div>
+        </div>
         <div className="border rounded-lg">
           <Table>
             <TableHeader>

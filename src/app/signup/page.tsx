@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,8 +21,17 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create a document in the 'users' collection
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        name: user.email?.split('@')[0] || 'Novo Usuário',
+        avatarUrl: null,
+      });
+
+      router.push('/users');
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
             setError('Este email já está em uso.');
@@ -42,9 +51,9 @@ export default function SignupPage() {
           <div className="flex justify-center mb-4">
             <Logo className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center font-headline">Cadastro</CardTitle>
+          <CardTitle className="text-2xl text-center font-headline">Adicionar Usuário</CardTitle>
           <CardDescription className="text-center">
-            Crie sua conta na Lidere University
+            Crie uma nova conta de acesso à plataforma
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -75,12 +84,6 @@ export default function SignupPage() {
               Criar Conta
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            Já tem uma conta?{" "}
-            <Link href="/login" className="underline">
-              Faça login
-            </Link>
-          </div>
         </CardContent>
       </Card>
     </div>
