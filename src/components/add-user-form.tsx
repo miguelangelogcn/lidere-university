@@ -13,8 +13,9 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
 } from "@/components/ui/accordion";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronDown } from 'lucide-react';
 
 type AddUserFormProps = {
   onUserAdded: () => void;
@@ -110,19 +111,21 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
 
               return (
                 <AccordionItem value={module.id} key={module.id}>
-                  <AccordionTrigger className="hover:no-underline py-2">
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          id={`module-${module.id}`}
-                          checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
-                          onCheckedChange={handleModuleSelection}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <Label htmlFor={`module-${module.id}`} className="font-normal cursor-pointer text-sm">
-                          {module.name}
-                        </Label>
-                      </div>
-                  </AccordionTrigger>
+                  <AccordionPrimitive.Header className="flex w-full items-center">
+                    <div className="pl-3 pr-2 py-2">
+                      <Checkbox
+                        id={`module-${module.id}`}
+                        checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
+                        onCheckedChange={handleModuleSelection}
+                      />
+                    </div>
+                    <AccordionPrimitive.Trigger className="flex flex-1 items-center justify-between py-2 pr-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180">
+                      <span className="text-sm font-normal">
+                        {module.name}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
                   <AccordionContent>
                       <div className="grid gap-3 pl-12 pt-2">
                           {module.items.map((item) => (
