@@ -16,8 +16,8 @@ const fontHeadline = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Vendas Ágeis',
-  description: 'Um CRM de vendas para a sua empresa.',
+  title: 'Lidere University',
+  description: 'Sua plataforma de gestão para a Lidere University.',
 };
 
 export default function RootLayout({
