@@ -195,7 +195,7 @@ export default function PipelinesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
             <AlertDialogDescription>
-              Essa ação não pode ser desfeita. Isso irá excluir permanentemente o funil <span className="font-bold">{selectedPipeline?.name}</span>.
+              Essa ação não pode ser desfeita. Isso irá excluir permanentemente o funil <span className="font-bold">{selectedPipeline?.name}&lt;/span&gt;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
