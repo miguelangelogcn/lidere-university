@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getProducts } from "@/services/productService";
 import type { Product, OnboardingStep } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Settings, CheckSquare } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ManageOnboardings } from "@/components/manage-onboardings";
 import { getOnboardingSteps } from "@/services/onboardingService";
 import { Loader2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 export default function OnboardingPage() {
@@ -28,6 +29,7 @@ export default function OnboardingPage() {
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [loadingSteps, setLoadingSteps] = useState(false);
     const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+    const [checkedSteps, setCheckedSteps] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         async function fetchProducts() {
@@ -45,6 +47,7 @@ export default function OnboardingPage() {
             return;
         };
         setLoadingSteps(true);
+        setCheckedSteps(new Set()); // Reset checks on new product selection
         const steps = await getOnboardingSteps(productId);
         setOnboardingSteps(steps);
         setLoadingSteps(false);
@@ -58,6 +61,18 @@ export default function OnboardingPage() {
         setIsManageDialogOpen(false);
         fetchOnboarding(selectedProductId);
     }
+
+    const handleCheckChange = (stepId: string) => {
+        setCheckedSteps(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(stepId)) {
+                newSet.delete(stepId);
+            } else {
+                newSet.add(stepId);
+            }
+            return newSet;
+        });
+    };
     
     const stepsByDay = onboardingSteps.reduce((acc, step) => {
         (acc[step.day] = acc[step.day] || []).push(step);
@@ -110,11 +125,21 @@ export default function OnboardingPage() {
                                             </div>
                                             <div className="flex flex-col gap-4">
                                                 {(stepsByDay[day] || []).map(step => (
-                                                    <Card key={step.id}>
+                                                    <Card key={step.id} className={checkedSteps.has(step.id) ? 'bg-muted/50' : ''}>
                                                         <CardHeader>
                                                             <CardTitle className="flex items-start gap-3 text-base whitespace-normal">
-                                                                <CheckSquare className="h-5 w-5 mt-0.5 text-primary shrink-0"/>
-                                                                <span>{step.title}</span>
+                                                                <Checkbox
+                                                                    id={`step-${step.id}`}
+                                                                    checked={checkedSteps.has(step.id)}
+                                                                    onCheckedChange={() => handleCheckChange(step.id)}
+                                                                    className="h-5 w-5 mt-0.5 shrink-0"
+                                                                />
+                                                                <label 
+                                                                    htmlFor={`step-${step.id}`}
+                                                                    className={`cursor-pointer ${checkedSteps.has(step.id) ? 'line-through text-muted-foreground' : ''}`}
+                                                                >
+                                                                    {step.title}
+                                                                </label>
                                                             </CardTitle>
                                                         </CardHeader>
                                                         <CardContent>
