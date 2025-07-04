@@ -27,3 +27,10 @@ export type Notification = {
   description: string;
   timestamp: string;
 };
+
+export type AppUser = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+};

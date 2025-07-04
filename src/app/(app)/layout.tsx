@@ -11,6 +11,7 @@ import {
   LineChart,
   LogOut,
   Sparkles,
+  Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         { href: "/pipeline", icon: LineChart, label: "Funil de Vendas" },
         { href: "/contacts", icon: Contact, label: "Contatos" },
         { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
+      ],
+    },
+    {
+      name: "Diretoria",
+      items: [
+        { href: "/users", icon: Users, label: "Gerenciar Usuários" },
       ],
     }
   ];
