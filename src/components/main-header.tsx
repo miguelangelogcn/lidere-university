@@ -1,4 +1,9 @@
-import { Bell, Search } from "lucide-react";
+'use client';
+
+import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,15 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Separator } from "./ui/separator";
 import { mockNotifications } from "@/lib/mock-data";
 
 
@@ -25,9 +27,15 @@ type MainHeaderProps = {
 }
 
 export function MainHeader({ title }: MainHeaderProps) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
-      {/* Mobile sidebar can be added here if needed with Sheet component */}
       
       <h1 className="text-xl md:text-2xl font-semibold font-headline">{title}</h1>
       
@@ -82,7 +90,7 @@ export function MainHeader({ title }: MainHeaderProps) {
             <DropdownMenuItem>Configurações</DropdownMenuItem>
             <DropdownMenuItem>Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sair</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
