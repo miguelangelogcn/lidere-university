@@ -68,3 +68,17 @@ export type Product = {
   presentationUrl?: string | null;
   warranty: string;
 }
+
+export type OnboardingStep = {
+  id: string;
+  title: string;
+  description: string;
+  order: number;
+};
+
+export type Onboarding = {
+  id: string; // Same as product ID
+  productId: string;
+  productName: string;
+  steps: OnboardingStep[];
+};
