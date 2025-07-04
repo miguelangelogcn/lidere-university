@@ -1,4 +1,6 @@
-import Link from "next/link";
+'use client';
+
+import { useState, useEffect } from "react";
 import { MainHeader } from "@/components/main-header";
 import {
   Table,
@@ -13,6 +15,15 @@ import { getUsers } from "@/services/userService";
 import type { AppUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AddUserForm } from "@/components/add-user-form";
 
 function getInitials(name: string | null) {
     if (!name) return 'U';
@@ -23,8 +34,26 @@ function getInitials(name: string | null) {
     return name.substring(0, 2).toUpperCase();
 }
 
-export default async function UsersPage() {
-  const users: AppUser[] = await getUsers();
+export default function UsersPage() {
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    const userList = await getUsers();
+    setUsers(userList);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const handleUserAdded = () => {
+    setIsDialogOpen(false);
+    fetchUsers();
+  };
 
   return (
     <>
@@ -32,14 +61,25 @@ export default async function UsersPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center">
             <div className="ml-auto flex items-center gap-2">
-                <Link href="/signup">
-                    <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                            Adicionar Usuário
-                        </span>
-                    </Button>
-                </Link>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                Adicionar Usuário
+                            </span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Adicionar Novo Usuário</DialogTitle>
+                          <DialogDescription>
+                            Crie uma nova conta de acesso à plataforma.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <AddUserForm onUserAdded={handleUserAdded} />
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
         <div className="border rounded-lg">
@@ -57,7 +97,13 @@ export default async function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.length > 0 ? (
+              {loading ? (
+                <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                        Carregando...
+                    </TableCell>
+                </TableRow>
+              ) : users.length > 0 ? (
                 users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="hidden sm:table-cell">
