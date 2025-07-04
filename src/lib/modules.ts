@@ -1,4 +1,5 @@
 import {
+  Briefcase,
   Contact,
   Home,
   LineChart,
@@ -36,6 +37,7 @@ export const appModules: Module[] = [
     name: "Diretoria",
     items: [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
+      { href: "/roles", icon: Briefcase, label: "Gerenciar Cargos" },
     ],
   }
 ];

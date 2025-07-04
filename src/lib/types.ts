@@ -35,3 +35,9 @@ export type AppUser = {
   avatarUrl: string | null;
   permissions: string[];
 };
+
+export type Role = {
+  id: string;
+  name: string;
+  permissions: string[];
+};
