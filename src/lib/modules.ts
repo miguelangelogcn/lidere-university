@@ -7,6 +7,7 @@ import {
   Users,
   Tag,
   ClipboardCheck,
+  Package,
   type LucideIcon,
 } from "lucide-react";
 
@@ -48,6 +49,7 @@ export const appModules: Module[] = [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
       { href: "/roles", icon: Briefcase, label: "Gerenciar Cargos" },
       { href: "/tags", icon: Tag, label: "Gerenciar Tags" },
+      { href: "/products", icon: Package, label: "Gerenciar Produtos" },
     ],
   }
 ];

@@ -59,3 +59,12 @@ export type Tag = {
   name:string;
   description?: string;
 }
+
+export type Product = {
+  id: string;
+  name: string;
+  price: number;
+  deliverables: string[];
+  presentationUrl?: string | null;
+  warranty: string;
+}
