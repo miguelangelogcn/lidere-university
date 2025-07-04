@@ -1,10 +1,13 @@
 export type Contact = {
   id: string;
   name: string;
-  email: string;
-  company: string;
   phone: string;
-  status: 'lead' | 'customer' | 'archived';
+  tags: string[];
+  email?: string | null;
+  city?: string | null;
+  maritalStatus?: string | null;
+  age?: number | null;
+  gender?: string | null;
   avatarUrl?: string | null;
 };
 
@@ -50,3 +53,8 @@ export type Role = {
   name: string;
   permissions: string[];
 };
+
+export type Tag = {
+  id: string;
+  name:string;
+}

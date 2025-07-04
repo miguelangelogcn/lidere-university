@@ -9,10 +9,13 @@ function docToContact(doc: DocumentData): Contact {
     return {
         id: doc.id,
         name: data.name || '',
-        email: data.email || '',
-        company: data.company || '',
+        email: data.email || null,
         phone: data.phone || '',
-        status: data.status || 'lead',
+        tags: data.tags || [],
+        city: data.city || null,
+        maritalStatus: data.maritalStatus || null,
+        age: data.age || null,
+        gender: data.gender || null,
         avatarUrl: data.avatarUrl || null,
     };
 }

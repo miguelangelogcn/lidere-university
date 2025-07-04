@@ -54,12 +54,6 @@ function getInitials(name: string) {
     return name.substring(0, 2).toUpperCase();
 }
 
-const statusMap = {
-    'lead': { label: 'Lead', variant: 'secondary' as const },
-    'customer': { label: 'Cliente', variant: 'default' as const },
-    'archived': { label: 'Arquivado', variant: 'outline' as const },
-}
-
 export default function ContactsPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
@@ -123,7 +117,7 @@ export default function ContactsPage() {
                             </span>
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle>Adicionar Novo Contato</DialogTitle>
                           <DialogDescription>
@@ -143,9 +137,8 @@ export default function ContactsPage() {
                   <span className="sr-only">Avatar</span>
                 </TableHead>
                 <TableHead>Nome</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Empresa</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                <TableHead>Tags</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -154,7 +147,7 @@ export default function ContactsPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         Carregando...
                     </TableCell>
                 </TableRow>
@@ -168,13 +161,17 @@ export default function ContactsPage() {
                       </Avatar>
                     </TableCell>
                     <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{contact.phone}</TableCell>
                     <TableCell>
-                      <Badge variant={statusMap[contact.status]?.variant || 'secondary'}>
-                          {statusMap[contact.status]?.label || contact.status}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                          {contact.tags?.slice(0, 3).map((tag) => (
+                              <Badge key={tag} variant="secondary">{tag}</Badge>
+                          ))}
+                          {contact.tags?.length > 3 && (
+                              <Badge variant="outline">+{contact.tags.length - 3}</Badge>
+                          )}
+                      </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{contact.company}</TableCell>
-                    <TableCell className="hidden md:table-cell">{contact.email}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -198,7 +195,7 @@ export default function ContactsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Nenhum contato encontrado.
                   </TableCell>
                 </TableRow>
@@ -210,7 +207,7 @@ export default function ContactsPage() {
 
       {/* Edit Contact Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) setSelectedContact(null); setIsEditDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Contato</DialogTitle>
             <DialogDescription>
