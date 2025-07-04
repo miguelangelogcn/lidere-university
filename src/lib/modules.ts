@@ -6,6 +6,7 @@ import {
   Sparkles,
   Users,
   Tag,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,6 +32,13 @@ export const appModules: Module[] = [
       { href: "/pipeline", icon: LineChart, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },
       { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
+    ],
+  },
+  {
+    id: "operacoes",
+    name: "Operações",
+    items: [
+      { href: "/onboarding", icon: ClipboardCheck, label: "Onboarding" },
     ],
   },
   {
