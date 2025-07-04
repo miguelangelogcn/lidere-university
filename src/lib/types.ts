@@ -34,6 +34,7 @@ export type AppUser = {
   email: string | null;
   avatarUrl: string | null;
   permissions: string[];
+  roleId?: string | null;
 };
 
 export type Role = {

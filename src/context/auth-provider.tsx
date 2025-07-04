@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, type User as FirebaseAuthUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, onSnapshot } from 'firebase/firestore';
-import type { AppUser } from '@/lib/types';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import type { AppUser, Role } from '@/lib/types';
 
 type AuthContextType = {
   user: AppUser | null;
@@ -23,9 +23,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
-        const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+        const unsubscribeSnapshot = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
-            setUser({ id: docSnap.id, ...docSnap.data() } as AppUser);
+            const appUser = { id: docSnap.id, ...docSnap.data() } as AppUser;
+
+            // Calculate final permissions
+            const finalPermissions = new Set<string>(appUser.permissions || []);
+            
+            if (appUser.roleId) {
+                const roleDocRef = doc(db, 'roles', appUser.roleId);
+                const roleSnap = await getDoc(roleDocRef);
+                if (roleSnap.exists()) {
+                    const roleData = roleSnap.data() as Role;
+                    (roleData.permissions || []).forEach(p => finalPermissions.add(p));
+                }
+            }
+            
+            appUser.permissions = Array.from(finalPermissions);
+            setUser(appUser);
           } else {
             setUser(null); 
           }

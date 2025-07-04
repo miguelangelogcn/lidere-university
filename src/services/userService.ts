@@ -12,6 +12,7 @@ function docToAppUser(doc: DocumentData): AppUser {
         email: data.email || null,
         avatarUrl: data.avatarUrl || data.photoURL || null,
         permissions: data.permissions || [],
+        roleId: data.roleId || null,
     };
 }
 
@@ -30,12 +31,13 @@ export async function getUsers(): Promise<AppUser[]> {
   }
 }
 
-export async function updateUser(userId: string, data: { name: string, permissions: string[] }): Promise<void> {
+export async function updateUser(userId: string, data: { name: string; permissions: string[], roleId: string | null }): Promise<void> {
     try {
         const userDocRef = doc(db, 'users', userId);
         await updateDoc(userDocRef, {
             name: data.name,
-            permissions: data.permissions
+            permissions: data.permissions,
+            roleId: data.roleId,
         });
     } catch (error) {
         console.error("Error updating user: ", error);

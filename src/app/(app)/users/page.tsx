@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUsers, deleteUser } from "@/services/userService";
-import type { AppUser } from "@/lib/types";
+import { getRoles } from "@/services/roleService";
+import type { AppUser, Role } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import {
@@ -43,6 +44,7 @@ import {
 import { AddUserForm } from "@/components/add-user-form";
 import { EditUserForm } from "@/components/edit-user-form";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 function getInitials(name: string | null) {
     if (!name) return 'U';
@@ -55,6 +57,7 @@ function getInitials(name: string | null) {
 
 export default function UsersPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -62,27 +65,28 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
-    const userList = await getUsers();
+    const [userList, roleList] = await Promise.all([getUsers(), getRoles()]);
     setUsers(userList);
+    setRoles(roleList);
     setLoading(false);
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchData();
   }, []);
 
   const handleUserAdded = () => {
     setIsAddDialogOpen(false);
-    fetchUsers();
+    fetchData();
     toast({ title: "Sucesso!", description: "Usuário adicionado com sucesso." });
   };
 
   const handleUserUpdated = () => {
     setIsEditDialogOpen(false);
     setSelectedUser(null);
-    fetchUsers();
+    fetchData();
     toast({ title: "Sucesso!", description: "Usuário atualizado com sucesso." });
   };
   
@@ -91,7 +95,7 @@ export default function UsersPage() {
     try {
         await deleteUser(selectedUser.id);
         toast({ title: "Sucesso!", description: "Usuário excluído com sucesso." });
-        fetchUsers();
+        fetchData();
     } catch (error) {
         toast({ variant: "destructive", title: "Erro!", description: "Falha ao excluir o usuário." });
     } finally {
@@ -99,6 +103,10 @@ export default function UsersPage() {
         setSelectedUser(null);
     }
   };
+
+  const getRoleName = (roleId?: string | null) => {
+    return roles.find(r => r.id === roleId)?.name || 'N/A';
+  }
 
   return (
     <>
@@ -115,14 +123,14 @@ export default function UsersPage() {
                             </span>
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                           <DialogTitle>Adicionar Novo Usuário</DialogTitle>
                           <DialogDescription>
                             Crie uma nova conta de acesso à plataforma.
                           </DialogDescription>
                         </DialogHeader>
-                        <AddUserForm onUserAdded={handleUserAdded} />
+                        <AddUserForm onUserAdded={handleUserAdded} roles={roles} />
                     </DialogContent>
                 </Dialog>
             </div>
@@ -131,11 +139,12 @@ export default function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
+                <TableHead className="hidden w-[64px] sm:table-cell">
                   <span className="sr-only">Avatar</span>
                 </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Cargo</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -144,7 +153,7 @@ export default function UsersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                         Carregando...
                     </TableCell>
                 </TableRow>
@@ -159,6 +168,9 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
                     <TableCell>{user.email || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{getRoleName(user.roleId)}</Badge>
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -182,7 +194,7 @@ export default function UsersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
@@ -194,14 +206,14 @@ export default function UsersPage() {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => { !open && setSelectedUser(null); setIsEditDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
             <DialogDescription>
               Altere os dados do usuário. A senha não pode ser alterada aqui.
             </DialogDescription>
           </DialogHeader>
-          {selectedUser && <EditUserForm user={selectedUser} onUserUpdated={handleUserUpdated} />}
+          {selectedUser && <EditUserForm user={selectedUser} onUserUpdated={handleUserUpdated} roles={roles} />}
         </DialogContent>
       </Dialog>
       
