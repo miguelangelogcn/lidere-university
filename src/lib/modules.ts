@@ -5,6 +5,7 @@ import {
   LineChart,
   Sparkles,
   Users,
+  Tag,
   type LucideIcon,
 } from "lucide-react";
 
@@ -39,6 +40,7 @@ export const appModules: Module[] = [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
       { href: "/roles", icon: Briefcase, label: "Gerenciar Cargos" },
       { href: "/pipelines", icon: LineChart, label: "Gerenciar Funis" },
+      { href: "/tags", icon: Tag, label: "Gerenciar Tags" },
     ],
   }
 ];
