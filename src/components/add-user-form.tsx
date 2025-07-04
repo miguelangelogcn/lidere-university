@@ -9,6 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { appModules } from '@/lib/modules';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type AddUserFormProps = {
   onUserAdded: () => void;
@@ -17,16 +23,16 @@ type AddUserFormProps = {
 export function AddUserForm({ onUserAdded }: AddUserFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [permissions, setPermissions] = useState<string[]>(appModules.map(m => m.id));
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handlePermissionChange = (moduleId: string, checked: boolean) => {
+  const handlePermissionChange = (href: string, checked: boolean) => {
     setPermissions(prev => {
       if (checked) {
-        return [...prev, moduleId];
+        return [...prev, href];
       } else {
-        return prev.filter(id => id !== moduleId);
+        return prev.filter(p => p !== href);
       }
     });
   };
@@ -86,22 +92,57 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
       </div>
        <div className="grid gap-4">
           <Label>Módulos de Acesso</Label>
-          <div className="grid gap-2">
-              {appModules.map((module) => (
-                  <div key={module.id} className="flex items-center space-x-2">
-                      <Checkbox
-                          id={module.id}
-                          checked={permissions.includes(module.id)}
-                          onCheckedChange={(checked) => {
-                              handlePermissionChange(module.id, !!checked);
-                          }}
-                      />
-                      <Label htmlFor={module.id} className="font-normal cursor-pointer">
+          <Accordion type="multiple" className="w-full">
+            {appModules.map((module) => {
+              const allModuleItems = module.items.map((item) => item.href);
+              const isAllSelected = allModuleItems.every((href) => permissions.includes(href));
+              const isPartiallySelected = allModuleItems.some((href) => permissions.includes(href)) && !isAllSelected;
+
+              const handleModuleSelection = (checked: boolean | 'indeterminate') => {
+                  setPermissions((prev) => {
+                    if (checked) {
+                      return [...new Set([...prev, ...allModuleItems])];
+                    } else {
+                      return prev.filter((p) => !allModuleItems.includes(p));
+                    }
+                  });
+              };
+
+              return (
+                <AccordionItem value={module.id} key={module.id}>
+                  <AccordionTrigger className="hover:no-underline py-2">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          id={`module-${module.id}`}
+                          checked={isAllSelected ? true : isPartiallySelected ? 'indeterminate' : false}
+                          onCheckedChange={handleModuleSelection}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <Label htmlFor={`module-${module.id}`} className="font-normal cursor-pointer text-sm">
                           {module.name}
-                      </Label>
-                  </div>
-              ))}
-          </div>
+                        </Label>
+                      </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                      <div className="grid gap-3 pl-12 pt-2">
+                          {module.items.map((item) => (
+                              <div key={item.href} className="flex items-center space-x-3">
+                                  <Checkbox
+                                      id={item.href}
+                                      checked={permissions.includes(item.href)}
+                                      onCheckedChange={(checked) => handlePermissionChange(item.href, !!checked)}
+                                  />
+                                  <Label htmlFor={item.href} className="font-normal cursor-pointer">
+                                      {item.label}
+                                  </Label>
+                              </div>
+                          ))}
+                      </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
       </div>
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
       <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>

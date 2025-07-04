@@ -16,9 +16,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { user } = useAuth();
 
-  const visibleModules = appModules.filter(module =>
-    user?.permissions?.includes(module.id)
-  );
+  const visibleModules = appModules
+    .map(module => ({
+        ...module,
+        items: module.items.filter(item => user?.permissions?.includes(item.href))
+    }))
+    .filter(module => module.items.length > 0);
 
   const handleLogout = async () => {
     await signOut(auth);
