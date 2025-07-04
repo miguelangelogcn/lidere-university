@@ -21,18 +21,17 @@ import { mockNotifications } from "@/lib/mock-data";
 
 type MainHeaderProps = {
   title: string;
+  children?: React.ReactNode;
 }
 
-export function MainHeader({ title }: MainHeaderProps) {
+export function MainHeader({ title, children }: MainHeaderProps) {
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
       
       <h1 className="text-xl md:text-2xl font-semibold font-headline">{title}</h1>
       
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
-          {/* Search can be added here if needed */}
-        </form>
+      <div className="ml-auto flex items-center gap-2">
+        {children}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
