@@ -99,7 +99,7 @@ export function EditOnboardingForm({ product, onSuccess }: EditOnboardingFormPro
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 py-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 py-4 max-h-[calc(90vh-12rem)] overflow-y-auto pr-4">
         <Accordion type="multiple" className="w-full" defaultValue={['0']}>
             {days.map(day => {
                 const dayFields = fields
@@ -156,7 +156,7 @@ export function EditOnboardingForm({ product, onSuccess }: EditOnboardingFormPro
             })}
         </Accordion>
 
-        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading || !form.formState.isDirty}>
+        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground mt-4" disabled={loading || !form.formState.isDirty}>
           {loading ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </form>
