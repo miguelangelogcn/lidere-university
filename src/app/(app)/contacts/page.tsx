@@ -55,9 +55,7 @@ export default function ContactsPage() {
                   </TableCell>
                   <TableCell className="font-medium">{contact.name}</TableCell>
                   <TableCell>
-                    <Badge variant={contact.status === 'customer' ? 'default' : 'secondary'}
-                        className={contact.status === 'customer' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}
-                    >
+                    <Badge variant={contact.status === 'customer' ? 'default' : 'secondary'}>
                         {contact.status === 'lead' ? 'Lead' : 'Cliente'}
                     </Badge>
                   </TableCell>

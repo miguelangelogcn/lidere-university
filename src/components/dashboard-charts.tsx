@@ -21,7 +21,7 @@ const dealStageData = [
     { name: 'Fechado Ganho', value: 278 },
 ];
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
+const COLORS = ['#FFC700', '#FAFAFA', '#A1A1AB', '#71717A', '#3F3F46'];
 
 export function DashboardCharts() {
   return (
@@ -90,7 +90,7 @@ export function DashboardCharts() {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
-                <Legend />
+                <Legend wrapperStyle={{ color: 'hsl(var(--foreground))' }} />
             </PieChart>
           </ResponsiveContainer>
         </CardContent>
