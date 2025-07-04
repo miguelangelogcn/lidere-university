@@ -5,39 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import {
-  Contact,
-  Home,
-  LineChart,
-  LogOut,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { AuthGuard } from "@/context/auth-provider";
+import { AuthGuard, useAuth } from "@/context/auth-provider";
+import { appModules } from "@/lib/modules";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  
-  const modules = [
-    {
-      name: "Vendas",
-      items: [
-        { href: "/dashboard", icon: Home, label: "Painel de Desempenho" },
-        { href: "/pipeline", icon: LineChart, label: "Funil de Vendas" },
-        { href: "/contacts", icon: Contact, label: "Contatos" },
-        { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
-      ],
-    },
-    {
-      name: "Diretoria",
-      items: [
-        { href: "/users", icon: Users, label: "Gerenciar Usuários" },
-      ],
-    }
-  ];
+  const { user } = useAuth();
+
+  const visibleModules = appModules.filter(module =>
+    user?.permissions?.includes(module.id)
+  );
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -57,7 +38,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </div>
             <div className="flex-1">
               <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                {modules.map((module) => (
+                {visibleModules.map((module) => (
                   <div key={module.name} className="py-2">
                     <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
                       {module.name}

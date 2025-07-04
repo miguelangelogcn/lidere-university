@@ -7,6 +7,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { appModules } from '@/lib/modules';
 
 type AddUserFormProps = {
   onUserAdded: () => void;
@@ -15,8 +17,19 @@ type AddUserFormProps = {
 export function AddUserForm({ onUserAdded }: AddUserFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [permissions, setPermissions] = useState<string[]>(appModules.map(m => m.id));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const handlePermissionChange = (moduleId: string, checked: boolean) => {
+    setPermissions(prev => {
+      if (checked) {
+        return [...prev, moduleId];
+      } else {
+        return prev.filter(id => id !== moduleId);
+      }
+    });
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,11 +39,11 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create a document in the 'users' collection
       await setDoc(doc(db, "users", user.uid), {
         email: user.email,
         name: user.email?.split('@')[0] || 'Novo Usuário',
         avatarUrl: null,
+        permissions: permissions,
       });
 
       onUserAdded();
@@ -70,6 +83,25 @@ export function AddUserForm({ onUserAdded }: AddUserFormProps) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+      </div>
+       <div className="grid gap-4">
+          <Label>Módulos de Acesso</Label>
+          <div className="grid gap-2">
+              {appModules.map((module) => (
+                  <div key={module.id} className="flex items-center space-x-2">
+                      <Checkbox
+                          id={module.id}
+                          checked={permissions.includes(module.id)}
+                          onCheckedChange={(checked) => {
+                              handlePermissionChange(module.id, !!checked);
+                          }}
+                      />
+                      <Label htmlFor={module.id} className="font-normal cursor-pointer">
+                          {module.name}
+                      </Label>
+                  </div>
+              ))}
+          </div>
       </div>
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
       <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={loading}>

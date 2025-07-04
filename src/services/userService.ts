@@ -11,6 +11,7 @@ function docToAppUser(doc: DocumentData): AppUser {
         name: data.name || data.displayName || null,
         email: data.email || null,
         avatarUrl: data.avatarUrl || data.photoURL || null,
+        permissions: data.permissions || [],
     };
 }
 
