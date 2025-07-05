@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Formation, Lesson as LessonType } from '@/lib/types';
+import type { SerializableFormation, SerializableLesson } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { PlayCircle, FileText, Download, BookOpen, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { ScrollArea } from './ui/scroll-area';
@@ -14,14 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LessonComments } from './lesson-comments';
 
 // Combined type for flattened lessons
-type EnrichedLesson = LessonType & {
+type EnrichedLesson = SerializableLesson & {
   moduleId: string;
   moduleTitle: string;
 };
 
-export function FormationViewer({ formation }: { formation: Formation }) {
+export function FormationViewer({ formation }: { formation: SerializableFormation }) {
   const [selectedLesson, setSelectedLesson] = useState<EnrichedLesson | null>(null);
 
   // Flatten lessons and select the first one by default
@@ -153,6 +154,12 @@ export function FormationViewer({ formation }: { formation: Formation }) {
                 </div>
               </div>
             )}
+            
+            <LessonComments
+              formationId={formation.id}
+              moduleId={selectedLesson.moduleId}
+              lesson={selectedLesson}
+            />
           </div>
         ) : (
           <div className="flex h-full items-center justify-center text-center text-muted-foreground">

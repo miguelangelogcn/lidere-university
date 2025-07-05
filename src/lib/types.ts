@@ -142,13 +142,31 @@ export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 
   actionPlan?: SerializableActionItem[];
 };
 
+export type Comment = {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl: string | null;
+  text: string;
+  createdAt: any; // Firestore Timestamp
+};
+
+export type SerializableComment = Omit<Comment, 'createdAt'> & {
+    createdAt: string;
+};
+
 export type Lesson = {
   id: string;
   title: string;
   videoUrl?: string | null;
   textContent?: string | null;
   attachments?: { name: string; url: string }[];
+  comments?: Comment[];
   order: number;
+};
+
+export type SerializableLesson = Omit<Lesson, 'comments'> & {
+    comments?: SerializableComment[];
 };
 
 export type Module = {
@@ -158,9 +176,18 @@ export type Module = {
   order: number;
 };
 
+export type SerializableModule = Omit<Module, 'lessons'> & {
+    lessons: SerializableLesson[];
+};
+
+
 export type Formation = {
   id:string;
   title: string;
   description: string;
   modules: Module[];
+};
+
+export type SerializableFormation = Omit<Formation, 'modules'> & {
+    modules: SerializableModule[];
 };
