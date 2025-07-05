@@ -1,39 +1,53 @@
-'use server';
-
-import { PublicFollowUpView } from "@/components/public-follow-up-view";
 import { getFollowUpProcessById } from "@/services/followUpService";
-import { notFound } from "next/navigation";
+import { PublicFollowUpView } from "@/components/public-follow-up-view";
 import type { SerializableFollowUpProcess } from "@/lib/types";
 
-type PublicAcompanhamentoPageProps = {
-    params: {
-        id: string;
+// Helper to safely convert different date formats to an ISO string
+function safeToISOString(dateValue: any): string | null {
+    if (!dateValue) {
+        return null;
     }
+    // Firestore Timestamp
+    if (typeof dateValue.toDate === 'function') {
+        return dateValue.toDate().toISOString();
+    }
+    // JS Date or a parsable string
+    const date = new Date(dateValue);
+    if (!isNaN(date.getTime())) {
+        return date.toISOString();
+    }
+    // Firestore Timestamp from wire format { seconds: ..., nanoseconds: ... }
+    if (typeof dateValue === 'object' && typeof dateValue.seconds === 'number') {
+      return new Date(dateValue.seconds * 1000).toISOString();
+    }
+    
+    return null;
 }
 
-export default async function PublicAcompanhamentoPage({ params }: PublicAcompanhamentoPageProps) {
-    
+
+export default async function PublicAcompanhamentoPage({ params }: { params: { id: string } }) {
     const process = await getFollowUpProcessById(params.id);
 
     if (!process) {
-        notFound();
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p>Acompanhamento não encontrado.</p>
+            </div>
+        );
     }
-
-    // Firestore Timestamps are not serializable and cannot be passed from Server to Client Components.
-    // We convert them to ISO strings before passing them as props.
+    
     const serializableProcess: SerializableFollowUpProcess = {
         ...process,
         actionPlan: process.actionPlan?.map(item => ({
             ...item,
-            dueDate: item.dueDate.toDate().toISOString(),
+            dueDate: safeToISOString(item.dueDate),
         })),
         mentorships: process.mentorships?.map(mentorship => ({
             ...mentorship,
-            createdAt: mentorship.createdAt.toDate().toISOString(),
+            createdAt: safeToISOString(mentorship.createdAt),
         })),
     };
 
-    return (
-        <PublicFollowUpView process={serializableProcess} />
-    )
+
+    return <PublicFollowUpView process={serializableProcess} />;
 }

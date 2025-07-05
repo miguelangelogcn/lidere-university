@@ -19,19 +19,21 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     
     const daysWithTasks = useMemo(() => {
-        return process.actionPlan?.map(item => new Date(item.dueDate)) || [];
+        return process.actionPlan?.map(item => item.dueDate ? new Date(item.dueDate) : null).filter((d): d is Date => !!d) || [];
     }, [process.actionPlan]);
 
     const tasksForSelectedDay = useMemo(() => {
         if (!selectedDate || !process.actionPlan) return [];
         return process.actionPlan.filter(item => 
-            isSameDay(new Date(item.dueDate), selectedDate)
+            item.dueDate && isSameDay(new Date(item.dueDate), selectedDate)
         ).sort((a,b) => a.title.localeCompare(b.title));
     }, [selectedDate, process.actionPlan]);
 
     const sortedMentorships = useMemo(() => {
         return [...(process.mentorships || [])].sort((a, b) => {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
         });
     }, [process.mentorships]);
 
