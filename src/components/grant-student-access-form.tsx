@@ -28,6 +28,9 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
 
   const form = useForm<AccessFormValues>({
     resolver: zodResolver(accessSchema),
+    defaultValues: {
+      password: '',
+    },
   });
 
   const onSubmit = async (data: AccessFormValues) => {
