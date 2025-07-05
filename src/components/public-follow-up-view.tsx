@@ -10,6 +10,7 @@ import { Calendar } from './ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import type { SerializableFollowUpProcess } from '@/lib/types';
+import { Skeleton } from './ui/skeleton';
 
 type PublicFollowUpViewProps = {
     process: SerializableFollowUpProcess;
@@ -17,8 +18,10 @@ type PublicFollowUpViewProps = {
 
 export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    const [hasMounted, setHasMounted] = useState(false);
     
     useEffect(() => {
+        setHasMounted(true);
         setSelectedDate(new Date());
     }, []);
     
@@ -41,6 +44,21 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
         });
     }, [process.mentorships]);
 
+    const CalendarPlaceholder = () => (
+        <div className="p-3">
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-7 w-28" />
+                    <div className="flex items-center space-x-1">
+                        <Skeleton className="h-7 w-7" />
+                        <Skeleton className="h-7 w-7" />
+                    </div>
+                </div>
+                <Skeleton className="h-72 w-full" />
+            </div>
+        </div>
+    );
+
     return (
         <div className="bg-background min-h-screen">
             <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
@@ -60,39 +78,50 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
                         <div className="grid gap-6 md:grid-cols-2">
                              <Card>
                                 <CardContent className="p-2">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={setSelectedDate}
-                                        className="rounded-md"
-                                        modifiers={{
-                                            highlighted: daysWithTasks,
-                                        }}
-                                        modifiersClassNames={{
-                                            highlighted: "bg-primary/20 text-primary-foreground rounded-md",
-                                        }}
-                                    />
+                                    {hasMounted ? (
+                                        <Calendar
+                                            mode="single"
+                                            selected={selectedDate}
+                                            onSelect={setSelectedDate}
+                                            className="rounded-md"
+                                            modifiers={{
+                                                highlighted: daysWithTasks,
+                                            }}
+                                            modifiersClassNames={{
+                                                highlighted: "bg-primary/20 text-primary-foreground rounded-md",
+                                            }}
+                                        />
+                                    ) : (
+                                        <CalendarPlaceholder />
+                                    )}
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        Tarefas para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
+                                        Tarefas para {hasMounted && selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className='space-y-4'>
-                                    {tasksForSelectedDay.length > 0 ? (
-                                        tasksForSelectedDay.map(item => (
-                                            <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
-                                                <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
-                                                <div className="grid gap-1">
-                                                    <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
-                                                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                                    {hasMounted ? (
+                                        tasksForSelectedDay.length > 0 ? (
+                                            tasksForSelectedDay.map(item => (
+                                                <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
+                                                    <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
+                                                    <div className="grid gap-1">
+                                                        <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
+                                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
+                                        )
                                     ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-16 w-full" />
+                                            <Skeleton className="h-16 w-full" />
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>
