@@ -46,6 +46,7 @@ import {
 import { GrantStudentAccessForm } from "@/components/grant-student-access-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditContactForm } from "@/components/edit-contact-form";
+import { EditStudentAccessForm } from "@/components/edit-student-access-form";
 
 function getInitials(name: string) {
     if (!name) return 'C';
@@ -61,10 +62,12 @@ export default function GerenciarAlunosPage() {
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [isGrantAccessDialogOpen, setIsGrantAccessDialogOpen] = useState(false);
+    const [isEditAccessDialogOpen, setIsEditAccessDialogOpen] = useState(false);
     const [isRevokeAccessDialogOpen, setIsRevokeAccessDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isNoEmailAlertOpen, setIsNoEmailAlertOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+    const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
     const { toast } = useToast();
 
     const fetchData = async () => {
@@ -90,8 +93,10 @@ export default function GerenciarAlunosPage() {
 
     const handleSuccess = () => {
         setIsGrantAccessDialogOpen(false);
+        setIsEditAccessDialogOpen(false);
         setIsEditDialogOpen(false);
         setSelectedContact(null);
+        setSelectedUser(null);
         fetchData();
     };
     
@@ -102,6 +107,12 @@ export default function GerenciarAlunosPage() {
         } else {
             setIsNoEmailAlertOpen(true);
         }
+    };
+
+    const handleEditAccessClick = (contact: Contact, user: AppUser) => {
+        setSelectedContact(contact);
+        setSelectedUser(user);
+        setIsEditAccessDialogOpen(true);
     };
 
     const handleRevokeAccess = async () => {
@@ -118,7 +129,6 @@ export default function GerenciarAlunosPage() {
         }
     };
 
-
   return (
     <>
       <MainHeader title="Gerenciar Alunos" />
@@ -132,7 +142,7 @@ export default function GerenciarAlunosPage() {
                 </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead className="hidden md:table-cell">Telefone</TableHead>
-                <TableHead>Status do Acesso</TableHead>
+                <TableHead>Acesso a Cursos</TableHead>
                 <TableHead>
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -151,7 +161,9 @@ export default function GerenciarAlunosPage() {
                 ))
               ) : contacts.length > 0 ? (
                 contacts.map((contact) => {
-                  const hasAccess = !!contact.studentAccess?.userId && userMapByUserId.has(contact.studentAccess.userId);
+                  const user = contact.studentAccess?.userId ? userMapByUserId.get(contact.studentAccess.userId) : null;
+                  const hasAccess = !!user;
+                  const accessibleCoursesCount = user?.accessibleFormations?.length || 0;
 
                   return (
                     <TableRow key={contact.id}>
@@ -164,9 +176,11 @@ export default function GerenciarAlunosPage() {
                         <TableCell className="font-medium">{contact.name}</TableCell>
                         <TableCell className="hidden md:table-cell">{contact.phone}</TableCell>
                         <TableCell>
-                            <Badge variant={hasAccess ? "secondary" : "outline"}>
-                                {hasAccess ? 'Ativo' : 'Inativo'}
-                            </Badge>
+                            {hasAccess ? (
+                                <Badge variant="secondary">{accessibleCoursesCount} {accessibleCoursesCount === 1 ? 'Curso' : 'Cursos'}</Badge>
+                            ) : (
+                                <Badge variant="outline">Inativo</Badge>
+                            )}
                         </TableCell>
                         <TableCell>
                         <DropdownMenu>
@@ -181,10 +195,15 @@ export default function GerenciarAlunosPage() {
                             <DropdownMenuItem onSelect={() => { setSelectedContact(contact); setIsEditDialogOpen(true); }}>
                                 Editar Contato
                             </DropdownMenuItem>
-                            {hasAccess ? (
-                                <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedContact(contact); setIsRevokeAccessDialogOpen(true); }}>
-                                    Revogar Acesso
-                                </DropdownMenuItem>
+                            {hasAccess && user ? (
+                                <>
+                                    <DropdownMenuItem onSelect={() => handleEditAccessClick(contact, user)}>
+                                        Editar Acesso
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedContact(contact); setIsRevokeAccessDialogOpen(true); }}>
+                                        Revogar Acesso
+                                    </DropdownMenuItem>
+                                </>
                             ) : (
                                 <DropdownMenuItem onSelect={() => handleGrantAccessClick(contact)}>
                                     Conceder Acesso
@@ -217,6 +236,18 @@ export default function GerenciarAlunosPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedContact && <GrantStudentAccessForm contact={selectedContact} onSuccess={handleSuccess} />}
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isEditAccessDialogOpen} onOpenChange={(open) => { if (!open) { setSelectedContact(null); setSelectedUser(null) } setIsEditAccessDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Acesso de Aluno</DialogTitle>
+            <DialogDescription>
+              Gerencie os cursos que este aluno pode acessar.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContact && selectedUser && <EditStudentAccessForm contact={selectedContact} user={selectedUser} onSuccess={handleSuccess} />}
         </DialogContent>
       </Dialog>
 

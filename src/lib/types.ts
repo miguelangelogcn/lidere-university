@@ -47,6 +47,7 @@ export type AppUser = {
   avatarUrl: string | null;
   permissions: string[];
   roleId?: string | null;
+  accessibleFormations?: string[];
 };
 
 export type Role = {

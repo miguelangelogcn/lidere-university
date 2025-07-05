@@ -1,10 +1,43 @@
+'use client';
+
+import { useState, useEffect } from "react";
 import { getFormations } from "@/services/formationService";
 import { MainHeader } from "@/components/main-header";
 import { FormationCard } from "@/components/formation-card";
+import { useAuth } from "@/context/auth-provider";
+import type { SerializableFormation } from "@/lib/types";
+import FormacoesLoading from "./loading";
 
-export default async function FormacoesPage() {
-  const formations = await getFormations();
+export default function FormacoesPage() {
+  const { user } = useAuth();
+  const [formations, setFormations] = useState<SerializableFormation[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    async function fetchFormations() {
+      setLoading(true);
+      const allFormations = await getFormations();
+      
+      // If user has specific formations, filter them. Otherwise, show all.
+      if (user?.accessibleFormations) {
+        const accessible = allFormations.filter(f => user.accessibleFormations!.includes(f.id));
+        setFormations(accessible);
+      } else {
+        setFormations(allFormations);
+      }
+      
+      setLoading(false);
+    }
+
+    if (user) {
+        fetchFormations();
+    }
+  }, [user]);
+
+  if (loading) {
+    return <FormacoesLoading />;
+  }
+  
   return (
     <>
       <MainHeader title="Formações" />
@@ -20,7 +53,7 @@ export default async function FormacoesPage() {
             <div className="flex flex-col items-center gap-1 text-center">
               <h3 className="text-2xl font-bold tracking-tight">Nenhuma formação encontrada</h3>
               <p className="text-sm text-muted-foreground">
-                Parece que ainda não há cursos disponíveis. Volte em breve!
+                Parece que não há cursos disponíveis para você no momento.
               </p>
             </div>
           </div>

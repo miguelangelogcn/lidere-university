@@ -2,30 +2,13 @@
 
 import { db, auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, doc, getDocs, query, where, setDoc, updateDoc } from 'firebase/firestore';
-import type { Contact, Role } from '@/lib/types';
+import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
+import type { Contact } from '@/lib/types';
 import { deleteUser as deleteUserFromCollection } from './userService';
 
-async function getStudentRole(): Promise<Role | null> {
-    const rolesCollection = collection(db, 'roles');
-    const q = query(rolesCollection, where("name", "==", "Aluno"));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
-    }
-    const roleDoc = querySnapshot.docs[0];
-    return { id: roleDoc.id, ...roleDoc.data() } as Role;
-}
-
-
-export async function grantStudentAccess(contact: Contact, password: string): Promise<void> {
+export async function grantStudentAccess(contact: Contact, password: string, formationIds: string[]): Promise<void> {
     if (!contact.email) {
         throw new Error('O contato não possui um email para criar o acesso.');
-    }
-
-    const studentRole = await getStudentRole();
-    if (!studentRole) {
-        throw new Error("O cargo 'Aluno' não foi encontrado. Por favor, crie-o na tela de 'Gerenciar Cargos' com as permissões de conteúdo.");
     }
 
     try {
@@ -36,8 +19,9 @@ export async function grantStudentAccess(contact: Contact, password: string): Pr
             email: user.email,
             name: contact.name,
             avatarUrl: contact.avatarUrl || null,
-            roleId: studentRole.id,
-            permissions: [],
+            roleId: null, // No longer tied to a specific role
+            permissions: ['/formacoes', '/ferramentas'], // Basic permissions to see content pages
+            accessibleFormations: formationIds,
         });
 
         const contactDocRef = doc(db, 'contacts', contact.id);
@@ -57,6 +41,17 @@ export async function grantStudentAccess(contact: Contact, password: string): Pr
     }
 }
 
+export async function updateStudentAccess(userId: string, formationIds: string[]): Promise<void> {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            accessibleFormations: formationIds
+        });
+    } catch (error) {
+        console.error("Error updating student access:", error);
+        throw new Error("Falha ao atualizar acesso do aluno.");
+    }
+}
 
 export async function revokeStudentAccess(contact: Contact): Promise<void> {
     if (!contact.studentAccess?.userId) {
