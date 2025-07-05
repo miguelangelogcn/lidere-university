@@ -40,6 +40,11 @@ export type Notification = {
   timestamp: string;
 };
 
+export type FormationAccess = {
+  formationId: string;
+  expiresAt: string | null; // ISO string on client
+};
+
 export type AppUser = {
   id: string;
   name: string | null;
@@ -47,7 +52,7 @@ export type AppUser = {
   avatarUrl: string | null;
   permissions: string[];
   roleId?: string | null;
-  accessibleFormations?: string[];
+  formationAccess?: FormationAccess[];
 };
 
 export type Role = {

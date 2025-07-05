@@ -47,6 +47,7 @@ import { GrantStudentAccessForm } from "@/components/grant-student-access-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditContactForm } from "@/components/edit-contact-form";
 import { EditStudentAccessForm } from "@/components/edit-student-access-form";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function getInitials(name: string) {
     if (!name) return 'C';
@@ -163,7 +164,13 @@ export default function GerenciarAlunosPage() {
                 contacts.map((contact) => {
                   const user = contact.studentAccess?.userId ? userMapByUserId.get(contact.studentAccess.userId) : null;
                   const hasAccess = !!user;
-                  const accessibleCoursesCount = user?.accessibleFormations?.length || 0;
+                  const now = new Date();
+                  const activeAccess = user?.formationAccess?.filter(
+                      (access) => !access.expiresAt || new Date(access.expiresAt) > now
+                  ) || [];
+                  const expiredAccessCount = (user?.formationAccess?.length || 0) - activeAccess.length;
+                  const accessibleCoursesCount = activeAccess.length;
+
 
                   return (
                     <TableRow key={contact.id}>
@@ -177,7 +184,21 @@ export default function GerenciarAlunosPage() {
                         <TableCell className="hidden md:table-cell">{contact.phone}</TableCell>
                         <TableCell>
                             {hasAccess ? (
-                                <Badge variant="secondary">{accessibleCoursesCount} {accessibleCoursesCount === 1 ? 'Curso' : 'Cursos'}</Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">{accessibleCoursesCount} {accessibleCoursesCount === 1 ? 'Curso' : 'Cursos'}</Badge>
+                                  {expiredAccessCount > 0 && (
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Badge variant="destructive" className="cursor-help">Expirado</Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Este aluno possui {expiredAccessCount} curso(s) com acesso expirado.</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </div>
                             ) : (
                                 <Badge variant="outline">Inativo</Badge>
                             )}
@@ -228,7 +249,7 @@ export default function GerenciarAlunosPage() {
       </main>
 
       <Dialog open={isGrantAccessDialogOpen} onOpenChange={(open) => { if (!open) setSelectedContact(null); setIsGrantAccessDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Conceder Acesso de Aluno</DialogTitle>
             <DialogDescription>
@@ -240,11 +261,11 @@ export default function GerenciarAlunosPage() {
       </Dialog>
       
       <Dialog open={isEditAccessDialogOpen} onOpenChange={(open) => { if (!open) { setSelectedContact(null); setSelectedUser(null) } setIsEditAccessDialogOpen(open); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Acesso de Aluno</DialogTitle>
             <DialogDescription>
-              Gerencie os cursos que este aluno pode acessar.
+              Gerencie os cursos e as datas de expiração que este aluno pode acessar.
             </DialogDescription>
           </DialogHeader>
           {selectedContact && selectedUser && <EditStudentAccessForm contact={selectedContact} user={selectedUser} onSuccess={handleSuccess} />}

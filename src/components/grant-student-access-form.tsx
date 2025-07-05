@@ -1,25 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk';
-import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
 import { grantStudentAccess } from '@/services/studentService';
 import { getFormations } from '@/services/formationService';
 import type { Contact, SerializableFormation } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, CalendarIcon, Trash2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Separator } from './ui/separator';
 
 const accessSchema = z.object({
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
-  formationIds: z.array(z.string()).nonempty('Selecione pelo menos um curso.'),
+  formationAccess: z.array(z.object({
+    formationId: z.string(),
+    expiresAt: z.date().nullable(),
+  })).nonempty("É necessário conceder acesso a pelo menos um curso."),
 });
 
 type AccessFormValues = z.infer<typeof accessSchema>;
@@ -32,7 +38,21 @@ type GrantStudentAccessFormProps = {
 export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAccessFormProps) {
   const [formations, setFormations] = useState<SerializableFormation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newCourseId, setNewCourseId] = useState('');
   const { toast } = useToast();
+
+  const form = useForm<AccessFormValues>({
+    resolver: zodResolver(accessSchema),
+    defaultValues: {
+      password: '',
+      formationAccess: [],
+    },
+  });
+  
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'formationAccess'
+  });
 
   useEffect(() => {
     async function fetchFormations() {
@@ -48,23 +68,31 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
     fetchFormations();
   }, [toast]);
 
-  const form = useForm<AccessFormValues>({
-    resolver: zodResolver(accessSchema),
-    defaultValues: {
-      password: '',
-      formationIds: [],
-    },
-  });
 
   const onSubmit = async (data: AccessFormValues) => {
+    const formattedAccess = data.formationAccess.map(access => ({
+      formationId: access.formationId,
+      expiresAt: access.expiresAt ? access.expiresAt.toISOString() : null,
+    }));
+
     try {
-      await grantStudentAccess(contact, data.password, data.formationIds);
+      await grantStudentAccess(contact, data.password, formattedAccess);
       toast({ title: "Sucesso!", description: `Acesso criado para ${contact.name}.` });
       onSuccess();
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro!", description: err.message });
     }
   };
+
+  const handleAddCourse = () => {
+    if (newCourseId && !fields.some(field => field.formationId === newCourseId)) {
+        append({ formationId: newCourseId, expiresAt: null });
+        setNewCourseId('');
+    }
+  };
+  
+  const formationMap = new Map(formations.map(f => [f.id, f.title]));
+  const availableFormations = formations.filter(f => !fields.some(field => field.formationId === f.id));
 
   if (loading) {
     return (
@@ -76,12 +104,13 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 py-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
         <div>
             <p className="text-sm">Você está criando um acesso de aluno para:</p>
             <p className="font-semibold">{contact.name}</p>
             <p className="text-sm text-muted-foreground">{contact.email}</p>
         </div>
+
         <FormField
           control={form.control}
           name="password"
@@ -95,73 +124,78 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="formationIds"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Cursos com Acesso</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-full justify-between h-auto min-h-10",
-                        !field.value?.length && "text-muted-foreground"
-                      )}
-                    >
-                      <div className="flex gap-1 flex-wrap">
-                        {formations
-                          .filter(f => field.value?.includes(f.id))
-                          .map((f) => (
-                            <Badge variant="secondary" key={f.id} className="mr-1">
-                              {f.title}
-                            </Badge>
-                          ))}
-                        {!field.value?.length && "Selecione os cursos"}
-                      </div>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                  <Command>
-                    <CommandInput placeholder="Buscar curso..." />
-                    <CommandList>
-                      <CommandEmpty>Nenhum curso encontrado.</CommandEmpty>
-                      <CommandGroup>
-                        {formations.map((f) => (
-                          <CommandItem
-                            value={f.title}
-                            key={f.id}
-                            onSelect={() => {
-                              const currentIds = field.value || [];
-                              const newValue = currentIds.includes(f.id)
-                                ? currentIds.filter((id) => id !== f.id)
-                                : [...currentIds, f.id];
-                              form.setValue("formationIds", newValue, { shouldValidate: true });
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                field.value?.includes(f.id) ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {f.title}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        
+        <div className="space-y-4 max-h-[30vh] overflow-y-auto pr-2">
+            <FormLabel>Cursos com Acesso</FormLabel>
+            {fields.length > 0 ? (
+                fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2 p-3 border rounded-md">
+                        <div className="flex-1">
+                            <p className="font-medium">{formationMap.get(field.formationId) || 'Curso não encontrado'}</p>
+                        </div>
+                         <FormField
+                            control={form.control}
+                            name={`formationAccess.${index}.expiresAt`}
+                            render={({ field: dateField }) => (
+                                <FormItem>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn("w-[240px] justify-start text-left font-normal", !dateField.value && "text-muted-foreground")}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {dateField.value ? format(dateField.value, 'PPP', { locale: ptBR }) : <span>Acesso vitalício</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={dateField.value} onSelect={dateField.onChange} initialFocus />
+                                             <div className="p-2 border-t">
+                                                <Button variant="ghost" size="sm" className="w-full" onClick={() => form.setValue(`formationAccess.${index}.expiresAt`, null)}>
+                                                    Limpar data
+                                                </Button>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                ))
+            ) : (
+                 <div className="text-sm text-center text-muted-foreground py-4 border border-dashed rounded-md">Nenhum curso atribuído.</div>
+            )}
+            <FormMessage>{form.formState.errors.formationAccess?.root?.message}</FormMessage>
+        </div>
+        
+        <Separator />
+        
+        <div className="space-y-2">
+            <FormLabel>Adicionar Curso</FormLabel>
+            <div className="flex gap-2">
+                <Select value={newCourseId} onValueChange={setNewCourseId}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecione um curso para adicionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                       {availableFormations.length > 0 ? (
+                            availableFormations.map(f => (
+                                <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
+                            ))
+                        ) : (
+                            <div className="p-2 text-sm text-muted-foreground">Todos os cursos já foram adicionados.</div>
+                        )}
+                    </SelectContent>
+                </Select>
+                 <Button type="button" onClick={handleAddCourse} disabled={!newCourseId}>
+                    <PlusCircle className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Criando Acesso...</> : 'Conceder Acesso'}
         </Button>

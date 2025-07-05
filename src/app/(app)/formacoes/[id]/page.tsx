@@ -24,9 +24,12 @@ export default function FormationDetailsPage({ params }: { params: { id: string 
       const formationData = await getFormationById(params.id);
       setFormation(formationData);
 
-      // Check access: if user has accessibleFormations, they must include this one.
-      // If they don't have the field, they are considered an admin/manager and have access.
-      const canView = !user.accessibleFormations || user.accessibleFormations.includes(params.id);
+      // Check access: user is admin if formationAccess is not defined. Otherwise, check array.
+      const hasSpecificAccess = user.formationAccess?.some(access =>
+        access.formationId === params.id &&
+        (!access.expiresAt || new Date(access.expiresAt) > new Date())
+      );
+      const canView = !user.formationAccess || hasSpecificAccess;
       setHasAccess(canView);
       
       setLoading(false);

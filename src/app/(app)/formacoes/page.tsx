@@ -18,11 +18,16 @@ export default function FormacoesPage() {
       setLoading(true);
       const allFormations = await getFormations();
       
-      // If user has specific formations, filter them. Otherwise, show all.
-      if (user?.accessibleFormations) {
-        const accessible = allFormations.filter(f => user.accessibleFormations!.includes(f.id));
+      if (user?.formationAccess) {
+        const accessibleFormationIds = new Set(
+          user.formationAccess
+            .filter(access => !access.expiresAt || new Date(access.expiresAt) > new Date())
+            .map(access => access.formationId)
+        );
+        const accessible = allFormations.filter(f => accessibleFormationIds.has(f.id));
         setFormations(accessible);
       } else {
+        // This is for admin/manager who has no formationAccess array and can see all
         setFormations(allFormations);
       }
       

@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         const unsubscribeSnapshot = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
-            const appUser = { id: docSnap.id, ...docSnap.data() } as AppUser;
+            const appUser = { id: docSnap.id, ...docSnap.data() } as any;
 
             // Calculate final permissions
             const finalPermissions = new Set<string>(appUser.permissions || []);
@@ -38,9 +38,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     (roleData.permissions || []).forEach(p => finalPermissions.add(p));
                 }
             }
+
+            // Convert formationAccess timestamps
+            if (appUser.formationAccess) {
+              appUser.formationAccess = appUser.formationAccess.map((access: any) => ({
+                formationId: access.formationId,
+                expiresAt: access.expiresAt?.toDate ? access.expiresAt.toDate().toISOString() : null,
+              }));
+            }
             
             appUser.permissions = Array.from(finalPermissions);
-            setUser(appUser);
+            setUser(appUser as AppUser);
           } else {
             setUser(null); 
           }

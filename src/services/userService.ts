@@ -13,6 +13,7 @@ function docToAppUser(doc: DocumentData): AppUser {
         avatarUrl: data.avatarUrl || data.photoURL || null,
         permissions: data.permissions || [],
         roleId: data.roleId || null,
+        formationAccess: data.formationAccess || [],
     };
 }
 

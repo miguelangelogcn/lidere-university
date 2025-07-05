@@ -2,11 +2,11 @@
 
 import { db, auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, doc, setDoc, updateDoc } from 'firebase/firestore';
-import type { Contact } from '@/lib/types';
+import { collection, doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import type { Contact, FormationAccess } from '@/lib/types';
 import { deleteUser as deleteUserFromCollection } from './userService';
 
-export async function grantStudentAccess(contact: Contact, password: string, formationIds: string[]): Promise<void> {
+export async function grantStudentAccess(contact: Contact, password: string, formationAccess: FormationAccess[]): Promise<void> {
     if (!contact.email) {
         throw new Error('O contato não possui um email para criar o acesso.');
     }
@@ -15,13 +15,18 @@ export async function grantStudentAccess(contact: Contact, password: string, for
         const userCredential = await createUserWithEmailAndPassword(auth, contact.email, password);
         const user = userCredential.user;
 
+        const accessWithTimestamps = formationAccess.map(access => ({
+            ...access,
+            expiresAt: access.expiresAt ? Timestamp.fromDate(new Date(access.expiresAt)) : null,
+        }));
+
         await setDoc(doc(db, "users", user.uid), {
             email: user.email,
             name: contact.name,
             avatarUrl: contact.avatarUrl || null,
-            roleId: null, // No longer tied to a specific role
-            permissions: ['/formacoes', '/ferramentas'], // Basic permissions to see content pages
-            accessibleFormations: formationIds,
+            roleId: null,
+            permissions: ['/formacoes', '/ferramentas'],
+            formationAccess: accessWithTimestamps,
         });
 
         const contactDocRef = doc(db, 'contacts', contact.id);
@@ -41,11 +46,15 @@ export async function grantStudentAccess(contact: Contact, password: string, for
     }
 }
 
-export async function updateStudentAccess(userId: string, formationIds: string[]): Promise<void> {
+export async function updateStudentAccess(userId: string, formationAccess: FormationAccess[]): Promise<void> {
     try {
         const userDocRef = doc(db, 'users', userId);
+        const accessWithTimestamps = formationAccess.map(access => ({
+          ...access,
+          expiresAt: access.expiresAt ? Timestamp.fromDate(new Date(access.expiresAt)) : null,
+        }));
         await updateDoc(userDocRef, {
-            accessibleFormations: formationIds
+            formationAccess: accessWithTimestamps
         });
     } catch (error) {
         console.error("Error updating student access:", error);
