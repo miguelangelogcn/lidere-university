@@ -4,9 +4,10 @@ import type { FollowUpProcess, Mentorship } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from './ui/button';
-import { PlusCircle, Paperclip, Download } from 'lucide-react';
+import { PlusCircle, Download, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddMentorshipForm } from './add-mentorship-form';
+import { useToast } from '@/hooks/use-toast';
 
 type FollowUpDetailsProps = {
     process: FollowUpProcess;
@@ -14,6 +15,17 @@ type FollowUpDetailsProps = {
 };
 
 export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
+    const { toast } = useToast();
+
+    const handleCopyLink = () => {
+        const url = `${window.location.origin}/public/acompanhamento/${process.id}`;
+        navigator.clipboard.writeText(url);
+        toast({
+            title: "Link Copiado!",
+            description: "O link de compartilhamento foi copiado para sua área de transferência.",
+        });
+    };
+
     const sortedMentorships = process.mentorships?.sort((a, b) => {
         const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date();
         const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date();
@@ -22,17 +34,23 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
 
     return (
         <div className="space-y-6 max-h-[75vh] overflow-y-auto p-6">
-            <Collapsible>
-                <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Registro de Mentoria
-                    </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                    <AddMentorshipForm followUpId={process.id} onSuccess={onSuccess} />
-                </CollapsibleContent>
-            </Collapsible>
+            <div className="flex flex-col sm:flex-row gap-4">
+                 <Collapsible className="w-full">
+                    <CollapsibleTrigger asChild>
+                        <Button variant="outline" className="w-full">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Registro de Mentoria
+                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-4">
+                        <AddMentorshipForm followUpId={process.id} onSuccess={onSuccess} />
+                    </CollapsibleContent>
+                </Collapsible>
+                 <Button variant="secondary" onClick={handleCopyLink}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Copiar Link
+                </Button>
+            </div>
             
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Histórico de Mentorias</h3>

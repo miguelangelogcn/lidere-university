@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { FollowUpProcess, Mentorship } from '@/lib/types';
-import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
 
@@ -66,5 +66,22 @@ export async function addMentorship(followUpId: string, mentorshipData: Omit<Men
     } catch (error) {
         console.error("Error adding mentorship:", error);
         throw new Error("Falha ao adicionar mentoria.");
+    }
+}
+
+export async function getFollowUpProcessById(id: string): Promise<FollowUpProcess | null> {
+    try {
+        const docRef = doc(db, 'acompanhamentos', id);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return docToFollowUpProcess(docSnap);
+        } else {
+            console.log("No such document!");
+            return null;
+        }
+    } catch (error) {
+        console.error("Error fetching follow-up process by ID: ", error);
+        return null;
     }
 }
