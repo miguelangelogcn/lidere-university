@@ -120,8 +120,9 @@ export async function submitTaskValidation(
         if (taskIndex === -1) {
             throw new Error("Ação não encontrada no plano.");
         }
-
-        const updatedTask = {
+        
+        // Update the task in the array
+        actionPlan[taskIndex] = {
             ...actionPlan[taskIndex],
             isCompleted: true,
             validationText: validationData.validationText || '',
@@ -129,9 +130,21 @@ export async function submitTaskValidation(
             submittedAt: new Date(),
         };
 
-        actionPlan[taskIndex] = updatedTask;
+        // Before writing, map over the entire array and convert any Firestore Timestamps
+        // back to JS Dates to prevent them from being stored as map objects.
+        const planWithJSDates = actionPlan.map(item => {
+            const newItem = { ...item };
+            if (item.dueDate && typeof item.dueDate.toDate === 'function') {
+                newItem.dueDate = item.dueDate.toDate();
+            }
+            if (item.submittedAt && typeof item.submittedAt.toDate === 'function') {
+                newItem.submittedAt = item.submittedAt.toDate();
+            }
+            return newItem;
+        });
 
-        await updateDoc(followUpDocRef, { actionPlan });
+
+        await updateDoc(followUpDocRef, { actionPlan: planWithJSDates });
 
     } catch (error) {
         console.error("Error submitting task validation:", error);
