@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Wrench,
   type LucideIcon,
+  FileEdit,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -52,6 +53,13 @@ export const appModules: Module[] = [
     items: [
       { href: "/formacoes", icon: GraduationCap, label: "Formações" },
       { href: "/ferramentas", icon: Wrench, label: "Ferramentas" },
+    ]
+  },
+  {
+    id: "gerenciar-conteudos",
+    name: "Gerenciar Conteúdos",
+    items: [
+        { href: "/gerenciar-formacoes", icon: FileEdit, label: "Formações" },
     ]
   },
   {
