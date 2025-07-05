@@ -1,6 +1,6 @@
 'use client';
 
-import type { FollowUpProcess } from '@/lib/types';
+import type { SerializableFollowUpProcess as FollowUpProcess } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from './ui/button';
 import { Download, Share2, PlusCircle } from 'lucide-react';
@@ -29,9 +29,9 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
     };
 
     const sortedMentorships = process.mentorships?.sort((a, b) => {
-        const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date();
-        const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date();
-        return dateB.getTime() - dateA.getTime();
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
     }) || [];
 
     return (
@@ -67,7 +67,7 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
                             {sortedMentorships.map(mentorship => (
                                 <AccordionItem value={mentorship.id} key={mentorship.id}>
                                     <AccordionTrigger>
-                                        Mentoria - {mentorship.createdAt?.seconds ? format(new Date(mentorship.createdAt.seconds * 1000), 'dd/MM/yyyy') : 'Data não disponível'}
+                                        Mentoria - {mentorship.createdAt ? format(new Date(mentorship.createdAt), 'dd/MM/yyyy') : 'Data não disponível'}
                                     </AccordionTrigger>
                                     <AccordionContent className="space-y-4">
                                         <div>

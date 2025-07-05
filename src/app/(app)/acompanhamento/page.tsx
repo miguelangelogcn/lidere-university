@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { getProducts } from '@/services/productService';
 import { getFollowUpProcesses } from '@/services/followUpService';
-import type { Product, FollowUpProcess } from '@/lib/types';
+import type { Product, SerializableFollowUpProcess as FollowUpProcess } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';

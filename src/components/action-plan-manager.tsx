@@ -15,7 +15,7 @@ import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { FollowUpProcess, ActionItem } from '@/lib/types';
+import type { SerializableFollowUpProcess as FollowUpProcess, SerializableActionItem, ActionItem as DbActionItem } from '@/lib/types';
 import { updateFollowUpProcess } from '@/services/followUpService';
 import { useToast } from '@/hooks/use-toast';
 import { doc, collection } from 'firebase/firestore';
@@ -46,21 +46,32 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
             dueDate: undefined,
         },
     });
+    
+    const convertToDbActionPlan = (plan: SerializableActionItem[]): DbActionItem[] => {
+        return plan.map(item => ({
+            ...item,
+            dueDate: item.dueDate ? new Date(item.dueDate) : null,
+            submittedAt: item.submittedAt ? new Date(item.submittedAt) : null,
+        }));
+    };
 
     const handleAddItem = async (data: ActionItemFormValues) => {
         setLoading(true);
-        const newActionItem: ActionItem = {
+        const newActionItem: SerializableActionItem = {
             id: doc(collection(db, 'random')).id,
             title: data.title,
             description: data.description,
-            dueDate: data.dueDate,
+            dueDate: data.dueDate.toISOString(),
             isCompleted: false,
+            validationText: '',
+            validationAttachments: [],
+            submittedAt: null,
         };
 
         const updatedActionPlan = [...(process.actionPlan || []), newActionItem];
 
         try {
-            await updateFollowUpProcess(process.id, { actionPlan: updatedActionPlan });
+            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
             toast({ title: 'Sucesso!', description: 'Plano de ação adicionado.' });
             form.reset({ title: '', description: '', dueDate: undefined });
             onSuccess();
@@ -76,7 +87,7 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
             item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
         );
         try {
-            await updateFollowUpProcess(process.id, { actionPlan: updatedActionPlan });
+            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
             toast({ title: 'Sucesso!', description: 'Status do item atualizado.' });
             onSuccess();
         } catch (error) {
@@ -87,7 +98,7 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
     const handleRemoveItem = async (itemId: string) => {
         const updatedActionPlan = (process.actionPlan || []).filter(item => item.id !== itemId);
         try {
-            await updateFollowUpProcess(process.id, { actionPlan: updatedActionPlan });
+            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
             toast({ title: 'Sucesso!', description: 'Item removido.' });
             onSuccess();
         } catch (error) {
@@ -96,8 +107,8 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
     };
 
     const sortedActionPlan = [...(process.actionPlan || [])].sort((a, b) => {
-        const dateA = a.dueDate?.seconds ? a.dueDate.seconds : Infinity;
-        const dateB = b.dueDate?.seconds ? b.dueDate.seconds : Infinity;
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
         return dateA - dateB;
     });
 
@@ -146,7 +157,7 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
                                     </label>
                                     <p className={cn("text-sm text-muted-foreground", item.isCompleted && "line-through")}>{item.description}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Vencimento: {item.dueDate?.seconds ? format(new Date(item.dueDate.seconds * 1000), 'dd/MM/yyyy') : 'Data inválida'}
+                                        Vencimento: {item.dueDate ? format(new Date(item.dueDate), 'dd/MM/yyyy') : 'Data inválida'}
                                     </p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>

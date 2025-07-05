@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import type { FollowUpProcess, Mentorship, ActionItem } from '@/lib/types';
+import type { FollowUpProcess, Mentorship, ActionItem, SerializableFollowUpProcess } from '@/lib/types';
 import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
@@ -20,13 +20,37 @@ function docToFollowUpProcess(doc: DocumentData): FollowUpProcess {
     };
 }
 
-export async function getFollowUpProcesses(): Promise<FollowUpProcess[]> {
+export async function getFollowUpProcesses(): Promise<SerializableFollowUpProcess[]> {
     try {
         const snapshot = await getDocs(followUpCollection);
         if (snapshot.empty) {
             return [];
         }
-        return snapshot.docs.map(docToFollowUpProcess);
+        return snapshot.docs.map(doc => {
+            const data = doc.data() as Omit<FollowUpProcess, 'id'>;
+            
+            const mentorships = (data.mentorships || []).map((m: any) => ({
+                ...m,
+                createdAt: m.createdAt?.toDate ? m.createdAt.toDate().toISOString() : null,
+            }));
+    
+            const actionPlan = (data.actionPlan || []).map((item: any) => ({
+                ...item,
+                dueDate: item.dueDate?.toDate ? item.dueDate.toDate().toISOString() : null,
+                submittedAt: item.submittedAt?.toDate ? item.submittedAt.toDate().toISOString() : null,
+            }));
+    
+            return {
+                id: doc.id,
+                contactId: data.contactId,
+                contactName: data.contactName,
+                productId: data.productId,
+                productName: data.productName,
+                status: data.status,
+                mentorships,
+                actionPlan,
+            };
+        });
     } catch (error) {
         console.error("Error fetching follow-up processes: ", error);
         return [];
