@@ -116,8 +116,6 @@ export type ActionItem = {
     submittedAt?: any; // Firestore Timestamp
     rejectionReason?: string;
     validatedAt?: any; // Firestore Timestamp
-    // isCompleted will be deprecated but handled for backward compatibility
-    isCompleted?: boolean;
 };
 
 export type FollowUpProcess = {
@@ -142,4 +140,28 @@ export type SerializableActionItem = Omit<ActionItem, 'dueDate' | 'submittedAt' 
 export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan'> & {
   mentorships?: SerializableMentorship[];
   actionPlan?: SerializableActionItem[];
+};
+
+export type Lesson = {
+  id: string;
+  title: string;
+  videoUrl?: string | null;
+  textContent?: string | null;
+  attachments?: { name: string; url: string }[];
+  order: number;
+};
+
+export type Module = {
+  id: string;
+  title: string;
+  lessons: Lesson[];
+  order: number;
+};
+
+export type Formation = {
+  id:string;
+  title: string;
+  description: string;
+  thumbnailUrl?: string | null;
+  modules: Module[];
 };
