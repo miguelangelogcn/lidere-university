@@ -16,7 +16,6 @@ function docToFormation(doc: DocumentData): Formation {
         id: doc.id,
         title: data.title || '',
         description: data.description || '',
-        thumbnailUrl: data.thumbnailUrl || null,
         modules: modules,
     };
 }

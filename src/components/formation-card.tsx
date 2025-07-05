@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, GraduationCap } from 'lucide-react';
 import type { Formation } from '@/lib/types';
 
 type FormationCardProps = {
@@ -14,14 +13,9 @@ export function FormationCard({ formation }: FormationCardProps) {
     <Card className="flex flex-col overflow-hidden">
       <CardHeader className="p-0">
         <Link href={`/formacoes/${formation.id}`} className="block">
-          <Image
-            src={formation.thumbnailUrl || 'https://placehold.co/600x400.png'}
-            alt={formation.title}
-            width={600}
-            height={400}
-            className="h-48 w-full object-cover"
-            data-ai-hint="course thumbnail"
-          />
+          <div className="flex h-48 w-full items-center justify-center bg-muted">
+            <GraduationCap className="h-16 w-16 text-muted-foreground" />
+          </div>
         </Link>
       </CardHeader>
       <CardContent className="flex-grow p-4">

@@ -36,7 +36,6 @@ const moduleSchema = z.object({
 const formationSchema = z.object({
   title: z.string().min(1, 'O título da formação é obrigatório.'),
   description: z.string().min(1, 'A descrição é obrigatória.'),
-  thumbnailUrl: z.string().url('URL da miniatura inválida.').optional().or(z.literal('')),
   modules: z.array(moduleSchema).min(1, 'A formação deve ter pelo menos um módulo.'),
 });
 
@@ -53,7 +52,6 @@ export function AddFormationForm({ onSuccess }: AddFormationFormProps) {
     defaultValues: {
       title: '',
       description: '',
-      thumbnailUrl: '',
       modules: [{ title: '', lessons: [{ title: '', videoUrl: '', textContent: '', attachments: [] }] }],
     },
   });
@@ -98,9 +96,6 @@ export function AddFormationForm({ onSuccess }: AddFormationFormProps) {
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
                     <FormItem><FormLabel>Descrição</FormLabel><FormControl><Textarea placeholder="Descreva o curso..." {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="thumbnailUrl" render={({ field }) => (
-                    <FormItem><FormLabel>URL da Miniatura (Thumbnail)</FormLabel><FormControl><Input placeholder="https://exemplo.com/imagem.png" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <Separator />

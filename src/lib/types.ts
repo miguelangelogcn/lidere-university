@@ -162,6 +162,5 @@ export type Formation = {
   id:string;
   title: string;
   description: string;
-  thumbnailUrl?: string | null;
   modules: Module[];
 };

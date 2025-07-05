@@ -8,7 +8,6 @@ export default function FormationDetailsLoading() {
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-8">
           <div className="mx-auto max-w-5xl">
-            <Skeleton className="mb-8 h-64 w-full rounded-lg" />
             <Skeleton className="mb-2 h-10 w-3/4" />
             <Skeleton className="mb-8 h-6 w-1/2" />
             

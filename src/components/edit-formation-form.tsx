@@ -39,7 +39,6 @@ const moduleSchema = z.object({
 const formationSchema = z.object({
   title: z.string().min(1, 'O título da formação é obrigatório.'),
   description: z.string().min(1, 'A descrição é obrigatória.'),
-  thumbnailUrl: z.string().url('URL da miniatura inválida.').optional().or(z.literal('')),
   modules: z.array(moduleSchema).min(1, 'A formação deve ter pelo menos um módulo.'),
 });
 
@@ -57,7 +56,6 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
     defaultValues: {
       title: formation.title,
       description: formation.description,
-      thumbnailUrl: formation.thumbnailUrl || '',
       modules: formation.modules,
     },
   });
@@ -102,9 +100,6 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
                     <FormItem><FormLabel>Descrição</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="thumbnailUrl" render={({ field }) => (
-                    <FormItem><FormLabel>URL da Miniatura (Thumbnail)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <Separator />

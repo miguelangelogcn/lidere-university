@@ -1,7 +1,6 @@
 import { getFormationById } from "@/services/formationService";
 import { MainHeader } from "@/components/main-header";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import {
   Accordion,
   AccordionContent,
@@ -24,16 +23,6 @@ export default async function FormationDetailsPage({ params }: { params: { id: s
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 md:p-8">
             <div className="mx-auto max-w-5xl">
-                <div className="mb-8 overflow-hidden rounded-lg shadow-lg">
-                    <Image
-                        src={formation.thumbnailUrl || "https://placehold.co/1200x600.png"}
-                        alt={formation.title}
-                        width={1200}
-                        height={600}
-                        className="h-auto w-full object-cover"
-                        data-ai-hint="course banner"
-                    />
-                </div>
                 <h1 className="mb-2 text-4xl font-bold font-headline">{formation.title}</h1>
                 <p className="mb-8 text-lg text-muted-foreground">{formation.description}</p>
                 
