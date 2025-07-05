@@ -9,13 +9,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { updateFormation } from '@/services/formationService';
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Trash2, BookText, FileVideo, Link as LinkIcon, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, BookText, FileVideo, Link as LinkIcon, Loader2, Upload } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Card, CardContent } from './ui/card';
 import type { Formation } from '@/lib/types';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, collection } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React, { useState } from 'react';
 
 const attachmentSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.'),
@@ -50,7 +52,9 @@ type EditFormationFormProps = {
 };
 
 export function EditFormationForm({ formation, onSuccess }: EditFormationFormProps) {
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  
   const form = useForm<FormationFormValues>({
     resolver: zodResolver(formationSchema),
     defaultValues: {
@@ -83,11 +87,16 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
 
     try {
       await updateFormation(formation.id, finalData);
-      toast({ title: "Sucesso!", description: "Formação atualizada." });
       onSuccess();
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro!", description: err.message || 'Falha ao atualizar formação.' });
     }
+  };
+
+  const getButtonText = () => {
+    if (isUploading) return 'Enviando Arquivo...';
+    if (form.formState.isSubmitting) return 'Salvando Alterações...';
+    return 'Salvar Alterações';
   };
   
   return (
@@ -108,7 +117,7 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
                     <h3 className="text-lg font-medium mb-2">Módulos</h3>
                      <div className="space-y-4">
                         {moduleFields.map((module, moduleIndex) => (
-                            <ModuleField key={module.id} moduleIndex={moduleIndex} form={form} removeModule={removeModule} />
+                            <ModuleField key={module.id} moduleIndex={moduleIndex} form={form} removeModule={removeModule} setIsUploading={setIsUploading} />
                         ))}
                     </div>
                 </div>
@@ -120,9 +129,9 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
             </div>
         </ScrollArea>
         <div className="flex justify-end pt-4 border-t">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Alterações
+            <Button type="submit" disabled={form.formState.isSubmitting || isUploading}>
+                 {(isUploading || form.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {getButtonText()}
             </Button>
         </div>
       </form>
@@ -130,7 +139,7 @@ export function EditFormationForm({ formation, onSuccess }: EditFormationFormPro
   );
 }
 
-function ModuleField({ moduleIndex, form, removeModule }: { moduleIndex: number, form: any, removeModule: (index: number) => void }) {
+function ModuleField({ moduleIndex, form, removeModule, setIsUploading }: { moduleIndex: number, form: any, removeModule: (index: number) => void, setIsUploading: React.Dispatch<React.SetStateAction<boolean>> }) {
     const { fields: lessonFields, append: appendLesson, remove: removeLesson } = useFieldArray({
         control: form.control,
         name: `modules.${moduleIndex}.lessons`,
@@ -150,7 +159,7 @@ function ModuleField({ moduleIndex, form, removeModule }: { moduleIndex: number,
                  <div className="pl-4 border-l-2 space-y-4">
                     <h4 className="font-medium">Aulas</h4>
                     {lessonFields.map((lesson, lessonIndex) => (
-                         <LessonField key={lesson.id} moduleIndex={moduleIndex} lessonIndex={lessonIndex} form={form} removeLesson={removeLesson} />
+                         <LessonField key={lesson.id} moduleIndex={moduleIndex} lessonIndex={lessonIndex} form={form} removeLesson={removeLesson} setIsUploading={setIsUploading} />
                     ))}
                     <Button type="button" variant="ghost" size="sm" onClick={() => appendLesson({ id: doc(collection(db, '_')).id, title: '', videoUrl: '', textContent: '', attachments: [] })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Aula
@@ -162,14 +171,44 @@ function ModuleField({ moduleIndex, form, removeModule }: { moduleIndex: number,
     );
 }
 
-function LessonField({ moduleIndex, lessonIndex, form, removeLesson }: { moduleIndex: number, lessonIndex: number, form: any, removeLesson: (index: number) => void }) {
+function LessonField({ moduleIndex, lessonIndex, form, removeLesson, setIsUploading }: { moduleIndex: number, lessonIndex: number, form: any, removeLesson: (index: number) => void, setIsUploading: React.Dispatch<React.SetStateAction<boolean>> }) {
      const { fields: attachmentFields, append: appendAttachment, remove: removeAttachment } = useFieldArray({
         control: form.control,
         name: `modules.${moduleIndex}.lessons.${lessonIndex}.attachments`,
     });
+    
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [uploadTarget, setUploadTarget] = React.useState<string | null>(null);
+    const { toast } = useToast();
+
+    const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event.target.files?.length || !uploadTarget) return;
+        const file = event.target.files[0];
+        setIsUploading(true);
+        const storagePath = `formations/attachments/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, storagePath);
+        try {
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+            form.setValue(uploadTarget, downloadURL, { shouldDirty: true });
+            toast({ title: "Sucesso!", description: "Arquivo enviado com sucesso." });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Erro de Upload!", description: "Não foi possível enviar o arquivo." });
+        } finally {
+            setIsUploading(false);
+            setUploadTarget(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+    
+    const triggerFileUpload = (fieldName: string) => {
+        setUploadTarget(fieldName);
+        fileInputRef.current?.click();
+    };
 
     return (
         <div className="p-4 border rounded-md bg-background relative">
+            <input type="file" ref={fileInputRef} onChange={handleFileSelected} className="hidden" accept="video/*,image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
             <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => removeLesson(lessonIndex)}>
                 <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
@@ -178,7 +217,15 @@ function LessonField({ moduleIndex, lessonIndex, form, removeLesson }: { moduleI
                     <FormItem><FormLabel>Título da Aula</FormLabel><FormControl><Input placeholder={`Aula ${lessonIndex + 1}`} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.videoUrl`} render={({ field }) => (
-                    <FormItem><FormLabel className="flex items-center text-sm"><FileVideo className="mr-2 h-4 w-4"/> URL do Vídeo (Opcional)</FormLabel><FormControl><Input placeholder="https://youtube.com/watch?v=..." {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="flex items-center text-sm"><FileVideo className="mr-2 h-4 w-4"/> URL do Vídeo (Opcional)</FormLabel>
+                        <FormControl>
+                            <div className="flex items-center gap-2">
+                                <Input placeholder="Cole a URL ou faça o upload" {...field} />
+                                <Button type="button" variant="outline" size="icon" onClick={() => triggerFileUpload(field.name)}><Upload className="h-4 w-4" /></Button>
+                            </div>
+                        </FormControl>
+                    <FormMessage />
+                    </FormItem>
                 )} />
                 <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.textContent`} render={({ field }) => (
                     <FormItem><FormLabel className="flex items-center text-sm"><BookText className="mr-2 h-4 w-4"/> Conteúdo em Texto (Opcional)</FormLabel><FormControl><Textarea rows={5} placeholder="Escreva o conteúdo da aula aqui..." {...field} /></FormControl><FormMessage /></FormItem>
@@ -193,11 +240,17 @@ function LessonField({ moduleIndex, lessonIndex, form, removeLesson }: { moduleI
                                     <FormItem className="flex-grow"><FormLabel className="text-xs">Nome do Anexo</FormLabel><FormControl><Input placeholder="Ex: Planilha de Exercícios" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`modules.${moduleIndex}.lessons.${lessonIndex}.attachments.${attachmentIndex}.url`} render={({ field }) => (
-                                    <FormItem className="flex-grow"><FormLabel className="text-xs">URL do Anexo</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem className="flex-grow"><FormLabel className="text-xs">URL do Anexo</FormLabel>
+                                        <FormControl>
+                                             <div className="flex items-center gap-2">
+                                                <Input placeholder="Cole a URL ou faça o upload" {...field} />
+                                                <Button type="button" variant="outline" size="icon" onClick={() => triggerFileUpload(field.name)}><Upload className="h-4 w-4" /></Button>
+                                             </div>
+                                        </FormControl>
+                                    <FormMessage />
+                                    </FormItem>
                                 )} />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(attachmentIndex)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(attachmentIndex)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                              </div>
                          ))}
                     </div>
