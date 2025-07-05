@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GrantStudentAccessForm } from "@/components/grant-student-access-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditContactForm } from "@/components/edit-contact-form";
 
 function getInitials(name: string) {
     if (!name) return 'C';
@@ -61,6 +62,7 @@ export default function GerenciarAlunosPage() {
     const [loading, setLoading] = useState(true);
     const [isGrantAccessDialogOpen, setIsGrantAccessDialogOpen] = useState(false);
     const [isRevokeAccessDialogOpen, setIsRevokeAccessDialogOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const { toast } = useToast();
 
@@ -87,6 +89,7 @@ export default function GerenciarAlunosPage() {
 
     const handleSuccess = () => {
         setIsGrantAccessDialogOpen(false);
+        setIsEditDialogOpen(false);
         setSelectedContact(null);
         fetchData();
     };
@@ -165,6 +168,9 @@ export default function GerenciarAlunosPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={() => { setSelectedContact(contact); setIsEditDialogOpen(true); }}>
+                                Editar Contato
+                            </DropdownMenuItem>
                             {hasAccess ? (
                                 <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedContact(contact); setIsRevokeAccessDialogOpen(true); }}>
                                     Revogar Acesso
@@ -201,6 +207,18 @@ export default function GerenciarAlunosPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedContact && <GrantStudentAccessForm contact={selectedContact} onSuccess={handleSuccess} />}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) setSelectedContact(null); setIsEditDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar Contato</DialogTitle>
+            <DialogDescription>
+              Altere os dados do contato.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContact && <EditContactForm contact={selectedContact} onSuccess={handleSuccess} />}
         </DialogContent>
       </Dialog>
 
