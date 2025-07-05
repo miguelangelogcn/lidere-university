@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Logo } from "./logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from './ui/button';
@@ -16,7 +16,11 @@ type PublicFollowUpViewProps = {
 };
 
 export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+    
+    useEffect(() => {
+        setSelectedDate(new Date());
+    }, []);
     
     const daysWithTasks = useMemo(() => {
         return process.actionPlan?.map(item => item.dueDate ? new Date(item.dueDate) : null).filter((d): d is Date => !!d) || [];
