@@ -30,10 +30,16 @@ export type Module = {
 
 export const appModules: Module[] = [
   {
+    id: "geral",
+    name: "Geral",
+    items: [
+      { href: "/inicio", icon: Home, label: "Início" },
+    ],
+  },
+  {
     id: "vendas",
     name: "Vendas",
     items: [
-      { href: "/dashboard", icon: Home, label: "Início" },
       { href: "/analytics", icon: LineChart, label: "Painel de Desempenho" },
       { href: "/pipeline", icon: Briefcase, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },

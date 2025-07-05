@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      router.push('/inicio');
     } catch (err: any) {
       setError('Falha ao fazer login. Verifique seu email e senha.');
       console.error(err);
