@@ -40,6 +40,11 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
 
     const form = useForm<ActionItemFormValues>({
         resolver: zodResolver(actionItemSchema),
+        defaultValues: {
+            title: '',
+            description: '',
+            dueDate: undefined,
+        },
     });
 
     const handleAddItem = async (data: ActionItemFormValues) => {
