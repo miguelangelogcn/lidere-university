@@ -68,7 +68,9 @@ export default function UsersPage() {
   const fetchData = async () => {
     setLoading(true);
     const [userList, roleList] = await Promise.all([getUsers(), getRoles()]);
-    setUsers(userList);
+    // Filter out users that are students (i.e., they have formationAccess defined)
+    const employeeList = userList.filter(user => !user.formationAccess || user.formationAccess.length === 0);
+    setUsers(employeeList);
     setRoles(roleList);
     setLoading(false);
   };
