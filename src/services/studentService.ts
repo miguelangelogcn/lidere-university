@@ -1,10 +1,9 @@
 'use server';
 
 import { db, auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { collection, doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import type { Contact, FormationAccess } from '@/lib/types';
-import { deleteUser as deleteUserFromCollection } from './userService';
 
 export async function grantStudentAccess(contact: Contact, password: string, formationAccess: FormationAccess[]): Promise<void> {
     if (!contact.email) {
@@ -19,25 +18,27 @@ export async function grantStudentAccess(contact: Contact, password: string, for
             ...access,
             expiresAt: access.expiresAt ? Timestamp.fromDate(new Date(access.expiresAt)) : null,
         }));
-
-        await setDoc(doc(db, "users", user.uid), {
-            email: user.email,
-            name: contact.name,
-            avatarUrl: contact.avatarUrl || null,
-            roleId: null,
-            permissions: ['/formacoes', '/ferramentas'],
-            formationAccess: accessWithTimestamps,
-        });
-
+        
         const contactDocRef = doc(db, 'contacts', contact.id);
         await updateDoc(contactDocRef, {
-            studentAccess: { userId: user.uid }
+            studentAccess: { userId: user.uid },
+            formationAccess: accessWithTimestamps,
         });
 
     } catch (error: any) {
         console.error("Error granting student access:", error);
         if (error.code === 'auth/email-already-in-use') {
-            throw new Error('Este email já está em uso por outro usuário.');
+            try {
+                // If user exists in Auth but not linked, link them
+                const contactDocRef = doc(db, 'contacts', contact.id);
+                // We cannot get user UID here without admin SDK.
+                // We will inform the user to reset password.
+                await sendPasswordResetEmail(auth, contact.email);
+                throw new Error('Este email já está em uso. Um email de redefinição de senha foi enviado para que ele possa acessar com uma nova senha.');
+            } catch (resetError) {
+                console.error("Error sending password reset email:", resetError);
+                throw new Error('Este email já está em uso por outro usuário.');
+            }
         }
         if (error.code === 'auth/weak-password') {
             throw new Error('A senha deve ter pelo menos 6 caracteres.');
@@ -46,14 +47,14 @@ export async function grantStudentAccess(contact: Contact, password: string, for
     }
 }
 
-export async function updateStudentAccess(userId: string, formationAccess: FormationAccess[]): Promise<void> {
+export async function updateStudentAccess(contactId: string, formationAccess: FormationAccess[]): Promise<void> {
     try {
-        const userDocRef = doc(db, 'users', userId);
+        const contactDocRef = doc(db, 'contacts', contactId);
         const accessWithTimestamps = formationAccess.map(access => ({
           ...access,
           expiresAt: access.expiresAt ? Timestamp.fromDate(new Date(access.expiresAt)) : null,
         }));
-        await updateDoc(userDocRef, {
+        await updateDoc(contactDocRef, {
             formationAccess: accessWithTimestamps
         });
     } catch (error) {
@@ -67,14 +68,14 @@ export async function revokeStudentAccess(contact: Contact): Promise<void> {
         throw new Error('Este contato não possui um acesso de aluno para ser revogado.');
     }
     
-    const userId = contact.studentAccess.userId;
-
+    // NOTE: This does not delete the user from Firebase Auth, as it requires admin privileges
+    // not available on the client-side. The user will still be able to log in, but won't
+    // be recognized by the app as a student or employee.
     try {
-        await deleteUserFromCollection(userId); 
-
         const contactDocRef = doc(db, 'contacts', contact.id);
         await updateDoc(contactDocRef, {
-            studentAccess: null
+            studentAccess: null,
+            formationAccess: [],
         });
 
     } catch (error) {

@@ -4,8 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { onAuthStateChanged, type User as FirebaseAuthUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
-import { doc, onSnapshot, getDoc } from 'firebase/firestore';
-import type { AppUser, Role } from '@/lib/types';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import type { AppUser, Role, Contact, FormationAccess } from '@/lib/types';
 
 type AuthContextType = {
   user: AppUser | null;
@@ -19,43 +19,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // 1. Check if it's an employee (in 'users' collection)
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        
-        const unsubscribeSnapshot = onSnapshot(userDocRef, async (docSnap) => {
-          if (docSnap.exists()) {
-            const appUser = { id: docSnap.id, ...docSnap.data() } as any;
+        const userDocSnap = await getDoc(userDocRef);
 
-            // Calculate final permissions
-            const finalPermissions = new Set<string>(appUser.permissions || []);
+        if (userDocSnap.exists()) {
+          // It's an employee
+          const appUser = { id: userDocSnap.id, ...userDocSnap.data() } as any;
+
+          // Calculate final permissions
+          const finalPermissions = new Set<string>(appUser.permissions || []);
+          
+          if (appUser.roleId) {
+              const roleDocRef = doc(db, 'roles', appUser.roleId);
+              const roleSnap = await getDoc(roleDocRef);
+              if (roleSnap.exists()) {
+                  const roleData = roleSnap.data() as Role;
+                  (roleData.permissions || []).forEach(p => finalPermissions.add(p));
+              }
+          }
+          
+          appUser.permissions = Array.from(finalPermissions);
+          setUser(appUser as AppUser);
+          setLoading(false);
+        } else {
+          // 2. Check if it's a student (linked from 'contacts' collection)
+          const contactsQuery = query(collection(db, 'contacts'), where('studentAccess.userId', '==', firebaseUser.uid));
+          const contactsSnapshot = await getDocs(contactsQuery);
+          
+          if (!contactsSnapshot.empty) {
+            const contactDoc = contactsSnapshot.docs[0];
+            const contactData = contactDoc.data() as Contact;
             
-            if (appUser.roleId) {
-                const roleDocRef = doc(db, 'roles', appUser.roleId);
-                const roleSnap = await getDoc(roleDocRef);
-                if (roleSnap.exists()) {
-                    const roleData = roleSnap.data() as Role;
-                    (roleData.permissions || []).forEach(p => finalPermissions.add(p));
-                }
-            }
-
-            // Convert formationAccess timestamps
-            if (appUser.formationAccess) {
-              appUser.formationAccess = appUser.formationAccess.map((access: any) => ({
+            // Construct an AppUser object from contact data
+            const studentUser: AppUser = {
+              id: firebaseUser.uid,
+              name: contactData.name,
+              email: contactData.email || null,
+              avatarUrl: contactData.avatarUrl || null,
+              permissions: ['/formacoes', '/ferramentas'], // Hardcoded student permissions
+              roleId: null,
+              formationAccess: (contactData.formationAccess || []).map((access: any) => ({
                 formationId: access.formationId,
                 expiresAt: access.expiresAt?.toDate ? access.expiresAt.toDate().toISOString() : null,
-              }));
-            }
-            
-            appUser.permissions = Array.from(finalPermissions);
-            setUser(appUser as AppUser);
+              })),
+            };
+            setUser(studentUser);
           } else {
-            setUser(null); 
+            // User exists in Auth, but not in 'users' or linked from 'contacts'
+            console.warn("Orphaned auth user found:", firebaseUser.uid);
+            setUser(null);
           }
           setLoading(false);
-        });
-        
-        return () => unsubscribeSnapshot();
+        }
       } else {
         setUser(null);
         setLoading(false);

@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { updateStudentAccess } from '@/services/studentService';
 import { getFormations } from '@/services/formationService';
-import type { Contact, AppUser, SerializableFormation } from '@/lib/types';
+import type { Contact, SerializableFormation } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CalendarIcon, Trash2, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,11 +30,10 @@ type AccessFormValues = z.infer<typeof accessSchema>;
 
 type EditStudentAccessFormProps = {
   contact: Contact;
-  user: AppUser;
   onSuccess: () => void;
 };
 
-export function EditStudentAccessForm({ contact, user, onSuccess }: EditStudentAccessFormProps) {
+export function EditStudentAccessForm({ contact, onSuccess }: EditStudentAccessFormProps) {
   const [formations, setFormations] = useState<SerializableFormation[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCourseId, setNewCourseId] = useState('');
@@ -43,7 +42,7 @@ export function EditStudentAccessForm({ contact, user, onSuccess }: EditStudentA
   const form = useForm<AccessFormValues>({
     resolver: zodResolver(accessSchema),
     defaultValues: {
-      formationAccess: user.formationAccess?.map(fa => ({
+      formationAccess: contact.formationAccess?.map(fa => ({
         formationId: fa.formationId,
         expiresAt: fa.expiresAt ? new Date(fa.expiresAt) : null
       })) || [],
@@ -76,7 +75,7 @@ export function EditStudentAccessForm({ contact, user, onSuccess }: EditStudentA
       expiresAt: access.expiresAt ? access.expiresAt.toISOString() : null,
     }));
     try {
-      await updateStudentAccess(user.id, formattedData);
+      await updateStudentAccess(contact.id, formattedData);
       toast({ title: "Sucesso!", description: `Acesso de ${contact.name} atualizado.` });
       onSuccess();
     } catch (err: any) {

@@ -10,6 +10,7 @@ export type Contact = {
   gender?: string | null;
   avatarUrl?: string | null;
   studentAccess?: { userId: string } | null;
+  formationAccess?: FormationAccess[];
 };
 
 export type PipelineStage = {

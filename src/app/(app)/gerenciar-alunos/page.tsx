@@ -14,9 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
-import type { Contact, AppUser } from "@/lib/types";
+import type { Contact } from "@/lib/types";
 import { getContacts } from "@/services/contactService";
-import { getUsers } from "@/services/userService";
 import { revokeStudentAccess } from "@/services/studentService";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -60,7 +59,6 @@ function getInitials(name: string) {
 
 export default function GerenciarAlunosPage() {
     const [contacts, setContacts] = useState<Contact[]>([]);
-    const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [isGrantAccessDialogOpen, setIsGrantAccessDialogOpen] = useState(false);
     const [isEditAccessDialogOpen, setIsEditAccessDialogOpen] = useState(false);
@@ -68,15 +66,13 @@ export default function GerenciarAlunosPage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isNoEmailAlertOpen, setIsNoEmailAlertOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-    const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
     const { toast } = useToast();
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [contactList, userList] = await Promise.all([getContacts(), getUsers()]);
+            const contactList = await getContacts();
             setContacts(contactList);
-            setUsers(userList);
         } catch (error) {
             toast({ variant: "destructive", title: "Erro!", description: "Falha ao carregar dados." });
         } finally {
@@ -87,17 +83,12 @@ export default function GerenciarAlunosPage() {
     useEffect(() => {
         fetchData();
     }, []);
-    
-    const userMapByUserId = useMemo(() => {
-        return new Map(users.map(user => [user.id, user]));
-    }, [users]);
 
     const handleSuccess = () => {
         setIsGrantAccessDialogOpen(false);
         setIsEditAccessDialogOpen(false);
         setIsEditDialogOpen(false);
         setSelectedContact(null);
-        setSelectedUser(null);
         fetchData();
     };
     
@@ -110,9 +101,8 @@ export default function GerenciarAlunosPage() {
         }
     };
 
-    const handleEditAccessClick = (contact: Contact, user: AppUser) => {
+    const handleEditAccessClick = (contact: Contact) => {
         setSelectedContact(contact);
-        setSelectedUser(user);
         setIsEditAccessDialogOpen(true);
     };
 
@@ -162,13 +152,12 @@ export default function GerenciarAlunosPage() {
                 ))
               ) : contacts.length > 0 ? (
                 contacts.map((contact) => {
-                  const user = contact.studentAccess?.userId ? userMapByUserId.get(contact.studentAccess.userId) : null;
-                  const hasAccess = !!user;
+                  const hasAccess = !!contact.studentAccess?.userId;
                   const now = new Date();
-                  const activeAccess = user?.formationAccess?.filter(
+                  const activeAccess = contact.formationAccess?.filter(
                       (access) => !access.expiresAt || new Date(access.expiresAt) > now
                   ) || [];
-                  const expiredAccessCount = (user?.formationAccess?.length || 0) - activeAccess.length;
+                  const expiredAccessCount = (contact.formationAccess?.length || 0) - activeAccess.length;
                   const accessibleCoursesCount = activeAccess.length;
 
 
@@ -216,9 +205,9 @@ export default function GerenciarAlunosPage() {
                             <DropdownMenuItem onSelect={() => { setSelectedContact(contact); setIsEditDialogOpen(true); }}>
                                 Editar Contato
                             </DropdownMenuItem>
-                            {hasAccess && user ? (
+                            {hasAccess ? (
                                 <>
-                                    <DropdownMenuItem onSelect={() => handleEditAccessClick(contact, user)}>
+                                    <DropdownMenuItem onSelect={() => handleEditAccessClick(contact)}>
                                         Editar Acesso
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedContact(contact); setIsRevokeAccessDialogOpen(true); }}>
@@ -260,7 +249,7 @@ export default function GerenciarAlunosPage() {
         </DialogContent>
       </Dialog>
       
-      <Dialog open={isEditAccessDialogOpen} onOpenChange={(open) => { if (!open) { setSelectedContact(null); setSelectedUser(null) } setIsEditAccessDialogOpen(open); }}>
+      <Dialog open={isEditAccessDialogOpen} onOpenChange={(open) => { if (!open) setSelectedContact(null); setIsEditAccessDialogOpen(open); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar Acesso de Aluno</DialogTitle>
@@ -268,7 +257,7 @@ export default function GerenciarAlunosPage() {
               Gerencie os cursos e as datas de expiração que este aluno pode acessar.
             </DialogDescription>
           </DialogHeader>
-          {selectedContact && selectedUser && <EditStudentAccessForm contact={selectedContact} user={selectedUser} onSuccess={handleSuccess} />}
+          {selectedContact && <EditStudentAccessForm contact={selectedContact} onSuccess={handleSuccess} />}
         </DialogContent>
       </Dialog>
 
