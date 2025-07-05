@@ -8,6 +8,7 @@ import {
   Tag,
   ClipboardCheck,
   Package,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ export const appModules: Module[] = [
     name: "Operações",
     items: [
       { href: "/onboarding", icon: ClipboardCheck, label: "Onboarding" },
+      { href: "/acompanhamento", icon: ClipboardList, label: "Acompanhamento" },
     ],
   },
   {
