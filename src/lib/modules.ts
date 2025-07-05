@@ -9,6 +9,8 @@ import {
   ClipboardCheck,
   Package,
   ClipboardList,
+  GraduationCap,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 
@@ -43,6 +45,14 @@ export const appModules: Module[] = [
       { href: "/onboarding", icon: ClipboardCheck, label: "Onboarding" },
       { href: "/acompanhamento", icon: ClipboardList, label: "Acompanhamento" },
     ],
+  },
+  {
+    id: "conteudos",
+    name: "Conteúdos",
+    items: [
+      { href: "/formacoes", icon: GraduationCap, label: "Formações" },
+      { href: "/ferramentas", icon: Wrench, label: "Ferramentas" },
+    ]
   },
   {
     id: "diretoria",
