@@ -38,7 +38,7 @@ function SidebarNav() {
   const visibleModules = appModules
     .map(module => ({
         ...module,
-        items: module.items.filter(item => user?.permissions?.includes(item.href))
+        items: module.items.filter(item => item.href === '/inicio' || user?.permissions?.includes(item.href))
     }))
     .filter(module => module.items.length > 0);
 
