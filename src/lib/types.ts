@@ -94,6 +94,15 @@ export type OnboardingProcess = {
   onboardingProgress: Record<string, boolean>; // { [stepId]: checked }
 };
 
+export type Mentorship = {
+  id: string;
+  transcription: string;
+  summary: string;
+  documents: { name: string; url: string }[];
+  recordingUrl?: string | null;
+  createdAt: any; // Firestore Timestamp
+};
+
 export type FollowUpProcess = {
   id: string;
   contactId: string;
@@ -101,4 +110,5 @@ export type FollowUpProcess = {
   productId: string;
   productName: string;
   status: 'todo' | 'doing' | 'done';
+  mentorships?: Mentorship[];
 };

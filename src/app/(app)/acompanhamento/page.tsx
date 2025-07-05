@@ -11,37 +11,46 @@ import { getFollowUpProcesses } from '@/services/followUpService';
 import type { Product, FollowUpProcess } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FollowUpDetails } from '@/components/follow-up-details';
 
 export default function AcompanhamentoPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [followUpProcesses, setFollowUpProcesses] = useState<FollowUpProcess[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedFollowUp, setSelectedFollowUp] = useState<FollowUpProcess | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const [productsData, followUpsData] = await Promise.all([
-          getProducts(),
-          getFollowUpProcesses(),
-        ]);
-        setProducts(productsData);
-        setFollowUpProcesses(followUpsData);
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Erro!',
-          description: 'Falha ao carregar os dados.',
-        });
-      } finally {
-        setLoading(false);
-      }
+  const fetchData = async () => {
+    // Keep loading true if it's already loading
+    setLoading(prev => prev || true);
+    try {
+      const [productsData, followUpsData] = await Promise.all([
+        getProducts(),
+        getFollowUpProcesses(),
+      ]);
+      setProducts(productsData);
+      setFollowUpProcesses(followUpsData);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro!',
+        description: 'Falha ao carregar os dados.',
+      });
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     fetchData();
-  }, [toast]);
+  }, []);
+
+  const handleSuccess = () => {
+    setSelectedFollowUp(null);
+    fetchData();
+  };
 
   const filteredFollowUps = selectedProductId
     ? followUpProcesses.filter(p => p.productId === selectedProductId)
@@ -92,7 +101,7 @@ export default function AcompanhamentoPage() {
             <CardHeader>
               <CardTitle>Clientes em Acompanhamento</CardTitle>
               <CardDescription>
-                Lista de clientes para o produto selecionado.
+                Lista de clientes para o produto selecionado. Clique em um cliente para ver os detalhes.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -113,7 +122,7 @@ export default function AcompanhamentoPage() {
                       </TableRow>
                     ) : filteredFollowUps.length > 0 ? (
                       filteredFollowUps.map(process => (
-                        <TableRow key={process.id}>
+                        <TableRow key={process.id} onClick={() => setSelectedFollowUp(process)} className="cursor-pointer">
                           <TableCell className="font-medium">{process.contactName}</TableCell>
                           <TableCell>
                             <Badge variant={statusVariants[process.status]}>{statusLabels[process.status]}</Badge>
@@ -134,6 +143,18 @@ export default function AcompanhamentoPage() {
           </Card>
         )}
       </main>
+
+      <Dialog open={!!selectedFollowUp} onOpenChange={(open) => !open && setSelectedFollowUp(null)}>
+        <DialogContent className="max-w-4xl p-0">
+            <DialogHeader className="p-6 pb-2">
+                <DialogTitle>Detalhes do Acompanhamento</DialogTitle>
+                <DialogDescription>
+                    Gerencie as mentorias para {selectedFollowUp?.contactName} no produto {selectedFollowUp?.productName}.
+                </DialogDescription>
+            </DialogHeader>
+            {selectedFollowUp && <FollowUpDetails process={selectedFollowUp} onSuccess={handleSuccess} />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
