@@ -15,22 +15,27 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import { mockNotifications } from "@/lib/mock-data";
+import { SidebarTrigger } from "./ui/sidebar";
+import React from "react";
 
 
 type MainHeaderProps = {
-  title: string;
+  title: string | React.ReactNode;
   children?: React.ReactNode;
 }
 
 export function MainHeader({ title, children }: MainHeaderProps) {
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
+    <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-4 md:px-6 sticky top-0 z-30">
       
-      <h1 className="text-xl md:text-2xl font-semibold font-headline">{title}</h1>
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="md:hidden" />
+        <h1 className="text-xl md:text-2xl font-semibold font-headline truncate">{title}</h1>
+      </div>
       
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex items-center gap-2">
         {children}
         <Popover>
           <PopoverTrigger asChild>

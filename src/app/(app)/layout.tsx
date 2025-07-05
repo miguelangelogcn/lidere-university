@@ -2,19 +2,38 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { LogOut } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { AuthGuard, useAuth } from "@/context/auth-provider";
 import { appModules } from "@/lib/modules";
+import { 
+    SidebarProvider, 
+    Sidebar, 
+    SidebarHeader, 
+    SidebarContent, 
+    SidebarMenu, 
+    SidebarMenuItem, 
+    SidebarMenuButton, 
+    SidebarGroup, 
+    SidebarGroupLabel, 
+    SidebarFooter, 
+    SidebarInset,
+    useSidebar
+} from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
+function SidebarNav() {
   const { user } = useAuth();
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.href = '/login';
+  };
 
   const visibleModules = appModules
     .map(module => ({
@@ -23,62 +42,69 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     }))
     .filter(module => module.items.length > 0);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
-
   return (
-    <AuthGuard>
-      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <div className="hidden border-r bg-muted/40 md:block">
-          <div className="flex h-full max-h-screen flex-col gap-2">
-            <div className="flex h-16 items-center border-b px-4 lg:h-[60px] lg:px-6">
-              <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
+    <div className="flex flex-col h-full">
+        <SidebarHeader>
+            <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
                 <Logo className="h-6 w-6 text-primary" />
-                <span>Lidere University</span>
-              </Link>
-            </div>
-            <div className="flex-1">
-              <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-                {visibleModules.map((module) => (
-                  <div key={module.name} className="py-2">
-                    <h3 className="mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                      {module.name}
-                    </h3>
-                    <div className="grid gap-1">
-                      {module.items.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.label}
-                          {item.badge && (
-                            <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </nav>
-            </div>
-            <div className="mt-auto p-4 border-t">
-               <Button onClick={handleLogout} variant="ghost" className="w-full justify-start">
-                 <LogOut className="h-4 w-4 mr-2" />
-                 Sair
-               </Button>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col">
-          {children}
-        </div>
-      </div>
-    </AuthGuard>
-  );
+                <span className="group-data-[collapsible=icon]:hidden">Vendas Ágeis</span>
+            </Link>
+        </SidebarHeader>
+        <SidebarContent>
+            {visibleModules.map((module) => (
+                <SidebarGroup key={module.name}>
+                    <SidebarGroupLabel>{module.name}</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {module.items.map((item) => (
+                            <SidebarMenuItem key={item.href}>
+                                <SidebarMenuButton 
+                                  asChild 
+                                  tooltip={item.label} 
+                                  isActive={pathname === item.href}
+                                  onClick={() => setOpenMobile(false)}
+                                >
+                                    <Link href={item.href}>
+                                        <item.icon />
+                                        <span>{item.label}</span>
+                                        {item.badge && (
+                                            <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground group-data-[collapsible=icon]:hidden">
+                                              {item.badge}
+                                            </Badge>
+                                        )}
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+            ))}
+        </SidebarContent>
+        <SidebarFooter>
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton onClick={handleLogout} tooltip="Sair">
+                        <LogOut />
+                        <span>Sair</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
+    </div>
+  )
+}
+
+
+export default function AppLayout({ children }: { children: ReactNode }) {
+    return (
+        <AuthGuard>
+            <SidebarProvider>
+                <Sidebar collapsible="icon">
+                    <SidebarNav />
+                </Sidebar>
+                <SidebarInset>
+                    {children}
+                </SidebarInset>
+            </SidebarProvider>
+        </AuthGuard>
+    );
 }
