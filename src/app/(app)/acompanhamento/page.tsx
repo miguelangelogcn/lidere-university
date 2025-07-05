@@ -7,14 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getProducts } from '@/services/productService';
-import { getOnboardingProcesses } from '@/services/deliveryService';
-import type { Product, OnboardingProcess } from '@/lib/types';
+import { getFollowUpProcesses } from '@/services/followUpService';
+import type { Product, FollowUpProcess } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function AcompanhamentoPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [onboardingProcesses, setOnboardingProcesses] = useState<OnboardingProcess[]>([]);
+  const [followUpProcesses, setFollowUpProcesses] = useState<FollowUpProcess[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -23,12 +23,12 @@ export default function AcompanhamentoPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const [productsData, onboardingsData] = await Promise.all([
+        const [productsData, followUpsData] = await Promise.all([
           getProducts(),
-          getOnboardingProcesses(),
+          getFollowUpProcesses(),
         ]);
         setProducts(productsData);
-        setOnboardingProcesses(onboardingsData);
+        setFollowUpProcesses(followUpsData);
       } catch (error) {
         toast({
           variant: 'destructive',
@@ -43,17 +43,17 @@ export default function AcompanhamentoPage() {
     fetchData();
   }, [toast]);
 
-  const filteredOnboardings = selectedProductId
-    ? onboardingProcesses.filter(p => p.productId === selectedProductId)
+  const filteredFollowUps = selectedProductId
+    ? followUpProcesses.filter(p => p.productId === selectedProductId)
     : [];
 
-  const statusLabels: { [key in OnboardingProcess['status']]: string } = {
+  const statusLabels: { [key in FollowUpProcess['status']]: string } = {
     todo: 'A Fazer',
     doing: 'Fazendo',
     done: 'Feito',
   };
   
-  const statusVariants: { [key in OnboardingProcess['status']]: "default" | "secondary" | "outline" } = {
+  const statusVariants: { [key in FollowUpProcess['status']]: "default" | "secondary" | "outline" } = {
     todo: 'outline',
     doing: 'default',
     done: 'secondary',
@@ -68,7 +68,7 @@ export default function AcompanhamentoPage() {
           <CardHeader>
             <CardTitle>Filtrar por Produto</CardTitle>
             <CardDescription>
-              Selecione um produto para visualizar todos os clientes que estão em processo de onboarding.
+              Selecione um produto para visualizar todos os clientes que estão em acompanhamento.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -90,7 +90,7 @@ export default function AcompanhamentoPage() {
         {selectedProductId && (
           <Card>
             <CardHeader>
-              <CardTitle>Clientes Ativos</CardTitle>
+              <CardTitle>Clientes em Acompanhamento</CardTitle>
               <CardDescription>
                 Lista de clientes para o produto selecionado.
               </CardDescription>
@@ -111,8 +111,8 @@ export default function AcompanhamentoPage() {
                           <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                         </TableCell>
                       </TableRow>
-                    ) : filteredOnboardings.length > 0 ? (
-                      filteredOnboardings.map(process => (
+                    ) : filteredFollowUps.length > 0 ? (
+                      filteredFollowUps.map(process => (
                         <TableRow key={process.id}>
                           <TableCell className="font-medium">{process.contactName}</TableCell>
                           <TableCell>
@@ -123,7 +123,7 @@ export default function AcompanhamentoPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={2} className="h-24 text-center">
-                          Nenhum cliente em onboarding para este produto.
+                          Nenhum cliente em acompanhamento para este produto.
                         </TableCell>
                       </TableRow>
                     )}

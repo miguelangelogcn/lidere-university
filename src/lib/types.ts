@@ -93,3 +93,12 @@ export type OnboardingProcess = {
   status: 'todo' | 'doing' | 'done';
   onboardingProgress: Record<string, boolean>; // { [stepId]: checked }
 };
+
+export type FollowUpProcess = {
+  id: string;
+  contactId: string;
+  contactName: string;
+  productId: string;
+  productName: string;
+  status: 'todo' | 'doing' | 'done';
+};
