@@ -103,6 +103,14 @@ export type Mentorship = {
   createdAt: any; // Firestore Timestamp
 };
 
+export type ActionItem = {
+    id: string;
+    title: string;
+    description: string;
+    dueDate: any; // Firestore Timestamp
+    isCompleted: boolean;
+};
+
 export type FollowUpProcess = {
   id: string;
   contactId: string;
@@ -111,4 +119,5 @@ export type FollowUpProcess = {
   productName: string;
   status: 'todo' | 'doing' | 'done';
   mentorships?: Mentorship[];
+  actionPlan?: ActionItem[];
 };

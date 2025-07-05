@@ -16,6 +16,7 @@ function docToFollowUpProcess(doc: DocumentData): FollowUpProcess {
         productName: data.productName,
         status: data.status,
         mentorships: data.mentorships || [],
+        actionPlan: data.actionPlan || [],
     };
 }
 
@@ -43,6 +44,7 @@ export async function createFollowUpProcess(data: {
             ...data,
             status: 'todo',
             mentorships: [],
+            actionPlan: [],
         };
         await addDoc(followUpCollection, followUpData);
     } catch (error) {
@@ -66,6 +68,16 @@ export async function addMentorship(followUpId: string, mentorshipData: Omit<Men
     } catch (error) {
         console.error("Error adding mentorship:", error);
         throw new Error("Falha ao adicionar mentoria.");
+    }
+}
+
+export async function updateFollowUpProcess(followUpId: string, data: Partial<Omit<FollowUpProcess, 'id'>>): Promise<void> {
+    try {
+        const followUpDocRef = doc(db, 'acompanhamentos', followUpId);
+        await updateDoc(followUpDocRef, data);
+    } catch (error) {
+        console.error("Error updating follow-up process:", error);
+        throw new Error("Falha ao atualizar o acompanhamento.");
     }
 }
 
