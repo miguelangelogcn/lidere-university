@@ -1,8 +1,9 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
 import type { FollowUpProcess, Mentorship, ActionItem, SerializableFollowUpProcess, ActionItemStatus } from '@/lib/types';
-import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc, deleteDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
 
@@ -242,5 +243,15 @@ export async function validateSubmittedTask(
         console.error("Error validating task:", error);
         if (error instanceof Error) throw error;
         throw new Error("Falha ao validar a tarefa.");
+    }
+}
+
+export async function deleteFollowUpProcess(followUpId: string): Promise<void> {
+    try {
+        const followUpDocRef = doc(db, 'acompanhamentos', followUpId);
+        await deleteDoc(followUpDocRef);
+    } catch (error) {
+        console.error("Error deleting follow-up process:", error);
+        throw new Error("Falha ao excluir o acompanhamento.");
     }
 }
