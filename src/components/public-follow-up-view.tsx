@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Logo } from "./logo";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from './ui/button';
-import { Download } from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { Calendar } from './ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -14,6 +14,8 @@ import { Skeleton } from './ui/skeleton';
 import { Progress } from './ui/progress';
 import { SubmitTaskValidationModal } from './submit-task-validation-modal';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 type PublicFollowUpViewProps = {
@@ -30,22 +32,18 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     }>({ isOpen: false, task: null });
     
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setHasMounted(true);
-            setSelectedDate(new Date());
-        }
+        setHasMounted(true);
+        setSelectedDate(new Date());
     }, []);
 
     const handleOpenModal = (task: SerializableActionItem) => {
-        if (!task.isCompleted) {
+        if (task.status === 'pending' || task.status === 'rejected') {
             setModalState({ isOpen: true, task });
         }
     };
     
     const handleSuccess = () => {
         setModalState({ isOpen: false, task: null });
-        // The page will be revalidated by the server action, no need for client-side state update
-        // However, we can increment a key to ensure components depending on `process` re-render if needed
         setKey(prev => prev + 1);
     };
     
@@ -70,7 +68,7 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
 
     const { totalTasks, completedTasks, progressPercentage } = useMemo(() => {
         const total = process.actionPlan?.length || 0;
-        const completed = process.actionPlan?.filter(item => item.isCompleted).length || 0;
+        const completed = process.actionPlan?.filter(item => item.status === 'approved').length || 0;
         const percentage = total > 0 ? (completed / total) * 100 : 0;
         return { totalTasks: total, completedTasks: completed, progressPercentage: percentage };
     }, [process.actionPlan]);
@@ -144,7 +142,7 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     }
 
     return (
-        <>
+        <TooltipProvider>
             <div className="bg-background min-h-screen" key={key}>
                 <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
                     <div className="flex items-center gap-3">
@@ -203,18 +201,29 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
                                     <CardContent className='space-y-4'>
                                         {tasksForSelectedDay.length > 0 ? (
                                             tasksForSelectedDay.map(item => (
-                                                <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
-                                                    <Checkbox 
-                                                        id={`task-${item.id}`} 
-                                                        checked={item.isCompleted} 
-                                                        onCheckedChange={() => handleOpenModal(item)}
-                                                        disabled={item.isCompleted}
-                                                        className="mt-1"
-                                                    />
-                                                    <div className="grid gap-1 flex-1">
-                                                        <label htmlFor={`task-${item.id}`} className={cn("font-medium cursor-pointer", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</label>
-                                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                <div key={item.id}>
+                                                    <div className="flex items-start gap-3 p-3 border rounded-md bg-background">
+                                                        <Checkbox 
+                                                            id={`task-${item.id}`} 
+                                                            checked={item.status === 'approved'}
+                                                            onCheckedChange={() => handleOpenModal(item)}
+                                                            disabled={item.status === 'approved' || item.status === 'submitted'}
+                                                            className="mt-1"
+                                                        />
+                                                        <div className="grid gap-1 flex-1">
+                                                            <label htmlFor={`task-${item.id}`} className={cn("font-medium cursor-pointer", item.status === 'approved' && "line-through text-muted-foreground")}>{item.title}</label>
+                                                            <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                        </div>
                                                     </div>
+                                                    {item.status === 'rejected' && item.rejectionReason && (
+                                                        <Alert variant="destructive" className="mt-2">
+                                                            <AlertCircle className="h-4 w-4" />
+                                                            <AlertTitle>Ajuste Necessário</AlertTitle>
+                                                            <AlertDescription>
+                                                                {item.rejectionReason}
+                                                            </AlertDescription>
+                                                        </Alert>
+                                                    )}
                                                 </div>
                                             ))
                                         ) : (
@@ -284,6 +293,6 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
                 task={modalState.task}
                 processId={process.id}
             />
-        </>
+        </TooltipProvider>
     );
 }

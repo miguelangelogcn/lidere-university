@@ -103,15 +103,21 @@ export type Mentorship = {
   createdAt: any; // Firestore Timestamp
 };
 
+export type ActionItemStatus = 'pending' | 'submitted' | 'approved' | 'rejected';
+
 export type ActionItem = {
     id: string;
     title: string;
     description: string;
     dueDate: any; // Firestore Timestamp
-    isCompleted: boolean;
+    status: ActionItemStatus;
     validationText?: string;
     validationAttachments?: { name: string; url: string }[];
     submittedAt?: any; // Firestore Timestamp
+    rejectionReason?: string;
+    validatedAt?: any; // Firestore Timestamp
+    // isCompleted will be deprecated but handled for backward compatibility
+    isCompleted?: boolean;
 };
 
 export type FollowUpProcess = {
@@ -127,9 +133,10 @@ export type FollowUpProcess = {
 
 // Types for passing data from Server to Client Components
 export type SerializableMentorship = Omit<Mentorship, 'createdAt'> & { createdAt: string | null };
-export type SerializableActionItem = Omit<ActionItem, 'dueDate' | 'submittedAt'> & { 
+export type SerializableActionItem = Omit<ActionItem, 'dueDate' | 'submittedAt' | 'validatedAt'> & {
     dueDate: string | null;
     submittedAt: string | null;
+    validatedAt: string | null;
 };
 
 export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan'> & {

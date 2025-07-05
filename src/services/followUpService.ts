@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import type { FollowUpProcess, Mentorship, ActionItem, SerializableFollowUpProcess } from '@/lib/types';
+import type { FollowUpProcess, Mentorship, ActionItem, SerializableFollowUpProcess, ActionItemStatus } from '@/lib/types';
 import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
@@ -34,11 +34,18 @@ export async function getFollowUpProcesses(): Promise<SerializableFollowUpProces
                 createdAt: m.createdAt?.toDate ? m.createdAt.toDate().toISOString() : null,
             }));
     
-            const actionPlan = (data.actionPlan || []).map((item: any) => ({
-                ...item,
-                dueDate: item.dueDate?.toDate ? item.dueDate.toDate().toISOString() : null,
-                submittedAt: item.submittedAt?.toDate ? item.submittedAt.toDate().toISOString() : null,
-            }));
+            const actionPlan = (data.actionPlan || []).map((item: any) => {
+                 // Backward compatibility for isCompleted
+                const status: ActionItemStatus = item.status || (item.isCompleted ? 'approved' : 'pending');
+
+                return {
+                    ...item,
+                    status,
+                    dueDate: item.dueDate?.toDate ? item.dueDate.toDate().toISOString() : null,
+                    submittedAt: item.submittedAt?.toDate ? item.submittedAt.toDate().toISOString() : null,
+                    validatedAt: item.validatedAt?.toDate ? item.validatedAt.toDate().toISOString() : null,
+                };
+            });
     
             return {
                 id: doc.id,
@@ -95,10 +102,30 @@ export async function addMentorship(followUpId: string, mentorshipData: Omit<Men
     }
 }
 
-export async function updateFollowUpProcess(followUpId: string, data: Partial<Omit<FollowUpProcess, 'id'>>): Promise<void> {
+export async function updateFollowUpProcess(followUpId: string, data: Partial<Omit<FollowUpProcess, 'id' | 'actionPlan'>> & { actionPlan?: ActionItem[] }): Promise<void> {
     try {
         const followUpDocRef = doc(db, 'acompanhamentos', followUpId);
-        await updateDoc(followUpDocRef, data);
+        
+        // Handle conversion of date strings back to Timestamps if needed
+        if (data.actionPlan) {
+            const planWithDates = data.actionPlan.map(item => {
+                const newItem: any = { ...item };
+                if (item.dueDate && typeof item.dueDate === 'string') {
+                    newItem.dueDate = new Date(item.dueDate);
+                }
+                if (item.submittedAt && typeof item.submittedAt === 'string') {
+                    newItem.submittedAt = new Date(item.submittedAt);
+                }
+                if (item.validatedAt && typeof item.validatedAt === 'string') {
+                    newItem.validatedAt = new Date(item.validatedAt);
+                }
+                return newItem;
+            });
+            await updateDoc(followUpDocRef, { ...data, actionPlan: planWithDates });
+        } else {
+             await updateDoc(followUpDocRef, data);
+        }
+
     } catch (error) {
         console.error("Error updating follow-up process:", error);
         throw new Error("Falha ao atualizar o acompanhamento.");
@@ -145,28 +172,22 @@ export async function submitTaskValidation(
             throw new Error("Ação não encontrada no plano.");
         }
         
-        // Update the task in the array
         actionPlan[taskIndex] = {
             ...actionPlan[taskIndex],
-            isCompleted: true,
+            status: 'submitted',
             validationText: validationData.validationText || '',
             validationAttachments: validationData.attachments || [],
             submittedAt: new Date(),
+            rejectionReason: '', // Clear previous rejection reason
         };
 
-        // Before writing, map over the entire array and convert any Firestore Timestamps
-        // back to JS Dates to prevent them from being stored as map objects.
         const planWithJSDates = actionPlan.map(item => {
-            const newItem = { ...item };
-            if (item.dueDate && typeof item.dueDate.toDate === 'function') {
-                newItem.dueDate = item.dueDate.toDate();
-            }
-            if (item.submittedAt && typeof item.submittedAt.toDate === 'function') {
-                newItem.submittedAt = item.submittedAt.toDate();
-            }
+            const newItem: any = { ...item };
+            if (item.dueDate && typeof item.dueDate.toDate === 'function') { newItem.dueDate = item.dueDate.toDate(); }
+            if (item.submittedAt && typeof item.submittedAt.toDate === 'function') { newItem.submittedAt = item.submittedAt.toDate(); }
+            if (item.validatedAt && typeof item.validatedAt.toDate === 'function') { newItem.validatedAt = item.validatedAt.toDate(); }
             return newItem;
         });
-
 
         await updateDoc(followUpDocRef, { actionPlan: planWithJSDates });
 
@@ -176,5 +197,50 @@ export async function submitTaskValidation(
             throw error;
         }
         throw new Error("Falha ao enviar validação da tarefa.");
+    }
+}
+
+export async function validateSubmittedTask(
+    followUpId: string, 
+    actionItemId: string, 
+    newStatus: 'approved' | 'rejected',
+    rejectionReason?: string
+): Promise<void> {
+    const followUpDocRef = doc(db, 'acompanhamentos', followUpId);
+    try {
+        const docSnap = await getDoc(followUpDocRef);
+        if (!docSnap.exists()) {
+            throw new Error("Processo de acompanhamento não encontrado.");
+        }
+
+        const process = docToFollowUpProcess(docSnap);
+        const actionPlan = process.actionPlan || [];
+
+        const taskIndex = actionPlan.findIndex(item => item.id === actionItemId);
+        if (taskIndex === -1) {
+            throw new Error("Ação não encontrada no plano.");
+        }
+        
+        actionPlan[taskIndex] = {
+            ...actionPlan[taskIndex],
+            status: newStatus,
+            rejectionReason: newStatus === 'rejected' ? rejectionReason : '',
+            validatedAt: new Date(),
+        };
+
+        const planWithJSDates = actionPlan.map(item => {
+            const newItem: any = { ...item };
+            if (item.dueDate && typeof item.dueDate.toDate === 'function') { newItem.dueDate = item.dueDate.toDate(); }
+            if (item.submittedAt && typeof item.submittedAt.toDate === 'function') { newItem.submittedAt = item.submittedAt.toDate(); }
+            if (item.validatedAt && typeof item.validatedAt.toDate === 'function') { newItem.validatedAt = item.validatedAt.toDate(); }
+            return newItem;
+        });
+
+        await updateDoc(followUpDocRef, { actionPlan: planWithJSDates });
+
+    } catch (error) {
+        console.error("Error validating task:", error);
+        if (error instanceof Error) throw error;
+        throw new Error("Falha ao validar a tarefa.");
     }
 }

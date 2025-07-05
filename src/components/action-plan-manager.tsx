@@ -10,16 +10,16 @@ import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
-import { Checkbox } from './ui/checkbox';
 import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { SerializableFollowUpProcess as FollowUpProcess, SerializableActionItem, ActionItem as DbActionItem } from '@/lib/types';
+import type { SerializableFollowUpProcess as FollowUpProcess, SerializableActionItem, ActionItem as DbActionItem, ActionItemStatus } from '@/lib/types';
 import { updateFollowUpProcess } from '@/services/followUpService';
 import { useToast } from '@/hooks/use-toast';
 import { doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { Badge } from './ui/badge';
 
 const actionItemSchema = z.object({
     title: z.string().min(3, 'O título é muito curto.'),
@@ -46,14 +46,6 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
             dueDate: undefined,
         },
     });
-    
-    const convertToDbActionPlan = (plan: SerializableActionItem[]): DbActionItem[] => {
-        return plan.map(item => ({
-            ...item,
-            dueDate: item.dueDate ? new Date(item.dueDate) : null,
-            submittedAt: item.submittedAt ? new Date(item.submittedAt) : null,
-        }));
-    };
 
     const handleAddItem = async (data: ActionItemFormValues) => {
         setLoading(true);
@@ -62,16 +54,17 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
             title: data.title,
             description: data.description,
             dueDate: data.dueDate.toISOString(),
-            isCompleted: false,
+            status: 'pending',
             validationText: '',
             validationAttachments: [],
             submittedAt: null,
+            validatedAt: null,
         };
 
         const updatedActionPlan = [...(process.actionPlan || []), newActionItem];
 
         try {
-            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
+            await updateFollowUpProcess(process.id, { actionPlan: updatedActionPlan as DbActionItem[] });
             toast({ title: 'Sucesso!', description: 'Plano de ação adicionado.' });
             form.reset({ title: '', description: '', dueDate: undefined });
             onSuccess();
@@ -82,23 +75,10 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
         }
     };
     
-    const handleToggleComplete = async (itemId: string) => {
-        const updatedActionPlan = (process.actionPlan || []).map(item =>
-            item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
-        );
-        try {
-            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
-            toast({ title: 'Sucesso!', description: 'Status do item atualizado.' });
-            onSuccess();
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro!', description: 'Falha ao atualizar status.' });
-        }
-    };
-
     const handleRemoveItem = async (itemId: string) => {
         const updatedActionPlan = (process.actionPlan || []).filter(item => item.id !== itemId);
         try {
-            await updateFollowUpProcess(process.id, { actionPlan: convertToDbActionPlan(updatedActionPlan) });
+            await updateFollowUpProcess(process.id, { actionPlan: updatedActionPlan as DbActionItem[] });
             toast({ title: 'Sucesso!', description: 'Item removido.' });
             onSuccess();
         } catch (error) {
@@ -111,6 +91,21 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
         const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
         return dateA - dateB;
     });
+    
+    const statusLabels: Record<ActionItemStatus, string> = {
+        pending: 'Pendente',
+        submitted: 'Enviado',
+        approved: 'Aprovado',
+        rejected: 'Reprovado',
+    };
+    
+    const statusVariants: Record<ActionItemStatus, "default" | "secondary" | "outline" | "destructive"> = {
+        pending: 'outline',
+        submitted: 'default',
+        approved: 'secondary', // This should be a success variant, but secondary is close
+        rejected: 'destructive',
+    };
+
 
     return (
         <div className="space-y-6">
@@ -150,12 +145,14 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
                     <ul className="space-y-3">
                         {sortedActionPlan.map(item => (
                             <li key={item.id} className="flex items-start gap-4 p-4 border rounded-md bg-card">
-                                <Checkbox id={`action-${item.id}`} checked={item.isCompleted} onCheckedChange={() => handleToggleComplete(item.id)} className="mt-1" />
                                 <div className="flex-1 grid gap-1.5">
-                                    <label htmlFor={`action-${item.id}`} className={cn("font-medium cursor-pointer", item.isCompleted && "line-through text-muted-foreground")}>
-                                        {item.title}
-                                    </label>
-                                    <p className={cn("text-sm text-muted-foreground", item.isCompleted && "line-through")}>{item.description}</p>
+                                    <div className="flex justify-between items-start">
+                                        <label htmlFor={`action-${item.id}`} className={cn("font-medium", item.status === 'approved' && "text-muted-foreground")}>
+                                            {item.title}
+                                        </label>
+                                        <Badge variant={statusVariants[item.status]}>{statusLabels[item.status]}</Badge>
+                                    </div>
+                                    <p className={cn("text-sm text-muted-foreground", item.status === 'approved' && "")}>{item.description}</p>
                                     <p className="text-xs text-muted-foreground">
                                         Vencimento: {item.dueDate ? format(new Date(item.dueDate), 'dd/MM/yyyy') : 'Data inválida'}
                                     </p>

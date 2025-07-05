@@ -1,6 +1,6 @@
 'use client';
 
-import type { SerializableFollowUpProcess as FollowUpProcess } from '@/lib/types';
+import type { SerializableFollowUpProcess } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from './ui/button';
 import { Download, Share2, PlusCircle } from 'lucide-react';
@@ -10,9 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ActionPlanManager } from './action-plan-manager';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { TaskValidationManager } from './task-validation-manager';
+import { Badge } from './ui/badge';
+import { useMemo } from 'react';
 
 type FollowUpDetailsProps = {
-    process: FollowUpProcess;
+    process: SerializableFollowUpProcess;
     onSuccess: () => void;
 };
 
@@ -33,6 +36,11 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
         const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return dateB - dateA;
     }) || [];
+    
+    const pendingValidationCount = useMemo(() => {
+        return process.actionPlan?.filter(task => task.status === 'submitted').length || 0;
+    }, [process.actionPlan]);
+
 
     return (
         <div className="flex flex-col h-full max-h-[85vh]">
@@ -45,9 +53,17 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
             </div>
             
             <Tabs defaultValue="mentorias" className="flex-1 overflow-hidden flex flex-col">
-                <TabsList className="grid w-full grid-cols-2 rounded-none border-b flex-shrink-0">
+                <TabsList className="grid w-full grid-cols-3 rounded-none border-b flex-shrink-0">
                     <TabsTrigger value="mentorias">Histórico de Mentorias</TabsTrigger>
                     <TabsTrigger value="plano_acao">Plano de Ação</TabsTrigger>
+                    <TabsTrigger value="validacao" className="relative">
+                        Validação de Tarefas
+                        {pendingValidationCount > 0 && (
+                            <Badge className="absolute top-1 right-2 h-5 w-5 p-0 flex items-center justify-center bg-primary text-primary-foreground">
+                                {pendingValidationCount}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="mentorias" className="p-6 overflow-y-auto flex-grow space-y-6">
                     <Collapsible>
@@ -118,6 +134,9 @@ export function FollowUpDetails({ process, onSuccess }: FollowUpDetailsProps) {
                 </TabsContent>
                 <TabsContent value="plano_acao" className="p-6 overflow-y-auto flex-grow">
                     <ActionPlanManager process={process} onSuccess={onSuccess} />
+                </TabsContent>
+                 <TabsContent value="validacao" className="p-6 overflow-y-auto flex-grow">
+                    <TaskValidationManager process={process} onSuccess={onSuccess} />
                 </TabsContent>
             </Tabs>
         </div>
