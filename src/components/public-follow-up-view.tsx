@@ -7,10 +7,11 @@ import { Button } from './ui/button';
 import { Download } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { Calendar } from './ui/calendar';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import type { SerializableFollowUpProcess } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
+import { Progress } from './ui/progress';
 
 type PublicFollowUpViewProps = {
     process: SerializableFollowUpProcess;
@@ -21,8 +22,10 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     const [hasMounted, setHasMounted] = useState(false);
     
     useEffect(() => {
-        setHasMounted(true);
-        setSelectedDate(new Date());
+        if (typeof window !== 'undefined') {
+            setHasMounted(true);
+            setSelectedDate(new Date());
+        }
     }, []);
     
     const daysWithTasks = useMemo(() => {
@@ -44,6 +47,14 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
         });
     }, [process.mentorships]);
 
+    const { totalTasks, completedTasks, progressPercentage } = useMemo(() => {
+        const total = process.actionPlan?.length || 0;
+        const completed = process.actionPlan?.filter(item => item.isCompleted).length || 0;
+        const percentage = total > 0 ? (completed / total) * 100 : 0;
+        return { totalTasks: total, completedTasks: completed, progressPercentage: percentage };
+    }, [process.actionPlan]);
+
+
     const CalendarPlaceholder = () => (
         <div className="p-3">
             <div className="space-y-4">
@@ -58,6 +69,58 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
             </div>
         </div>
     );
+
+    if (!hasMounted) {
+        return (
+            <div className="bg-background min-h-screen">
+                <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
+                    <div className="flex items-center gap-3">
+                        <Logo className="h-8 w-8 text-primary" />
+                        <span className="font-semibold text-xl font-headline">Acompanhamento</span>
+                    </div>
+                    <div className='text-right'>
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-24 mt-1" />
+                    </div>
+                </header>
+                <main className="p-4 md:p-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-8">
+                        <section>
+                            <h2 className="font-headline text-2xl font-semibold mb-4">Plano de Ação</h2>
+                             <Card className="mb-6">
+                                <CardHeader>
+                                    <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+                                    <CardDescription><Skeleton className="h-4 w-52" /></CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Skeleton className="h-4 w-full" />
+                                </CardContent>
+                            </Card>
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <Card><CardContent className="p-0"><CalendarPlaceholder /></CardContent></Card>
+                                <Card>
+                                    <CardHeader><CardTitle><Skeleton className="h-6 w-48" /></CardTitle></CardHeader>
+                                    <CardContent className='space-y-4'>
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-16 w-full" />
+                                            <Skeleton className="h-16 w-full" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </section>
+                    </div>
+                    <aside className="space-y-6">
+                        <h2 className="font-headline text-2xl font-semibold">Histórico de Mentorias</h2>
+                        <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    </aside>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-background min-h-screen">
@@ -75,53 +138,58 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
                 <div className="lg:col-span-2 space-y-8">
                     <section>
                         <h2 className="font-headline text-2xl font-semibold mb-4">Plano de Ação</h2>
+                        
+                        {totalTasks > 0 && (
+                            <Card className="mb-6">
+                                <CardHeader>
+                                    <CardTitle>Progresso Geral</CardTitle>
+                                    <CardDescription>{completedTasks} de {totalTasks} tarefas concluídas.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-4">
+                                        <Progress value={progressPercentage} className="w-full" />
+                                        <span className="font-semibold text-muted-foreground whitespace-nowrap">{Math.round(progressPercentage)}%</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <div className="grid gap-6 md:grid-cols-2">
                              <Card>
-                                <CardContent className="p-2">
-                                    {hasMounted ? (
-                                        <Calendar
-                                            mode="single"
-                                            selected={selectedDate}
-                                            onSelect={setSelectedDate}
-                                            className="rounded-md"
-                                            modifiers={{
-                                                highlighted: daysWithTasks,
-                                            }}
-                                            modifiersClassNames={{
-                                                highlighted: "bg-primary/20 text-primary-foreground rounded-md",
-                                            }}
-                                        />
-                                    ) : (
-                                        <CalendarPlaceholder />
-                                    )}
+                                <CardContent className="p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        className="rounded-md p-3"
+                                        modifiers={{
+                                            highlighted: daysWithTasks,
+                                        }}
+                                        modifiersClassNames={{
+                                            highlighted: "bg-primary/20 text-primary-foreground rounded-md",
+                                        }}
+                                    />
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardHeader>
                                     <CardTitle>
-                                        Tarefas para {hasMounted && selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
+                                        Tarefas para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className='space-y-4'>
-                                    {hasMounted ? (
-                                        tasksForSelectedDay.length > 0 ? (
-                                            tasksForSelectedDay.map(item => (
-                                                <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
-                                                    <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
-                                                    <div className="grid gap-1">
-                                                        <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
-                                                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                                                    </div>
+                                    {tasksForSelectedDay.length > 0 ? (
+                                        tasksForSelectedDay.map(item => (
+                                            <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
+                                                <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
+                                                <div className="grid gap-1">
+                                                    <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
+                                                    <p className="text-sm text-muted-foreground">{item.description}</p>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
-                                        )
+                                            </div>
+                                        ))
                                     ) : (
-                                        <div className="space-y-2">
-                                            <Skeleton className="h-16 w-full" />
-                                            <Skeleton className="h-16 w-full" />
-                                        </div>
+                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
                                     )}
                                 </CardContent>
                             </Card>
