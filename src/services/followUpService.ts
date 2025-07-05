@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import type { FollowUpProcess, Mentorship } from '@/lib/types';
+import type { FollowUpProcess, Mentorship, ActionItem } from '@/lib/types';
 import { collection, getDocs, type DocumentData, addDoc, doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
@@ -95,5 +95,49 @@ export async function getFollowUpProcessById(id: string): Promise<FollowUpProces
     } catch (error) {
         console.error("Error fetching follow-up process by ID: ", error);
         return null;
+    }
+}
+
+export async function submitTaskValidation(
+    followUpId: string, 
+    actionItemId: string, 
+    validationData: { 
+        validationText?: string; 
+        attachments: { name: string; url: string }[];
+    }
+): Promise<void> {
+    const followUpDocRef = doc(db, 'acompanhamentos', followUpId);
+    try {
+        const docSnap = await getDoc(followUpDocRef);
+        if (!docSnap.exists()) {
+            throw new Error("Processo de acompanhamento não encontrado.");
+        }
+
+        const process = docToFollowUpProcess(docSnap);
+        const actionPlan = process.actionPlan || [];
+
+        const taskIndex = actionPlan.findIndex(item => item.id === actionItemId);
+        if (taskIndex === -1) {
+            throw new Error("Ação não encontrada no plano.");
+        }
+
+        const updatedTask = {
+            ...actionPlan[taskIndex],
+            isCompleted: true,
+            validationText: validationData.validationText || '',
+            validationAttachments: validationData.attachments || [],
+            submittedAt: new Date(),
+        };
+
+        actionPlan[taskIndex] = updatedTask;
+
+        await updateDoc(followUpDocRef, { actionPlan });
+
+    } catch (error) {
+        console.error("Error submitting task validation:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error("Falha ao enviar validação da tarefa.");
     }
 }

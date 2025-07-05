@@ -1,53 +1,39 @@
+'use server';
+
 import { getFollowUpProcessById } from "@/services/followUpService";
 import { PublicFollowUpView } from "@/components/public-follow-up-view";
+import { notFound } from "next/navigation";
 import type { SerializableFollowUpProcess } from "@/lib/types";
 
-// Helper to safely convert different date formats to an ISO string
-function safeToISOString(dateValue: any): string | null {
-    if (!dateValue) {
-        return null;
-    }
-    // Firestore Timestamp
-    if (typeof dateValue.toDate === 'function') {
-        return dateValue.toDate().toISOString();
-    }
-    // JS Date or a parsable string
-    const date = new Date(dateValue);
-    if (!isNaN(date.getTime())) {
-        return date.toISOString();
-    }
-    // Firestore Timestamp from wire format { seconds: ..., nanoseconds: ... }
-    if (typeof dateValue === 'object' && typeof dateValue.seconds === 'number') {
-      return new Date(dateValue.seconds * 1000).toISOString();
-    }
-    
-    return null;
-}
+type PublicAcompanhamentoPageProps = {
+    params: {
+        id: string;
+    };
+};
 
-
-export default async function PublicAcompanhamentoPage({ params }: { params: { id: string } }) {
+export default async function PublicAcompanhamentoPage({ params }: PublicAcompanhamentoPageProps) {
     const process = await getFollowUpProcessById(params.id);
 
     if (!process) {
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <p>Acompanhamento não encontrado.</p>
-            </div>
-        );
+        notFound();
     }
+
+    const serializableMentorships = process.mentorships?.map(mentorship => ({
+        ...mentorship,
+        createdAt: mentorship.createdAt?.toDate().toISOString() || null,
+    })) || [];
     
+    const serializableActionPlan = process.actionPlan?.map(item => ({
+        ...item,
+        dueDate: item.dueDate?.toDate().toISOString() || null,
+        submittedAt: item.submittedAt?.toDate().toISOString() || null,
+    })) || [];
+
     const serializableProcess: SerializableFollowUpProcess = {
         ...process,
-        actionPlan: process.actionPlan?.map(item => ({
-            ...item,
-            dueDate: safeToISOString(item.dueDate),
-        })),
-        mentorships: process.mentorships?.map(mentorship => ({
-            ...mentorship,
-            createdAt: safeToISOString(mentorship.createdAt),
-        })),
+        mentorships: serializableMentorships,
+        actionPlan: serializableActionPlan,
     };
-
 
     return <PublicFollowUpView process={serializableProcess} />;
 }

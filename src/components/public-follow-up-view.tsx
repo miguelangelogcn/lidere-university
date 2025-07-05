@@ -9,9 +9,12 @@ import { format, isSameDay } from 'date-fns';
 import { Calendar } from './ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
-import type { SerializableFollowUpProcess } from '@/lib/types';
+import type { SerializableFollowUpProcess, SerializableActionItem } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Progress } from './ui/progress';
+import { SubmitTaskValidationModal } from './submit-task-validation-modal';
+import { cn } from '@/lib/utils';
+
 
 type PublicFollowUpViewProps = {
     process: SerializableFollowUpProcess;
@@ -20,6 +23,11 @@ type PublicFollowUpViewProps = {
 export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>();
     const [hasMounted, setHasMounted] = useState(false);
+    const [key, setKey] = useState(0); // Used to force re-render
+    const [modalState, setModalState] = useState<{
+        isOpen: boolean;
+        task: SerializableActionItem | null;
+    }>({ isOpen: false, task: null });
     
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -27,6 +35,19 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
             setSelectedDate(new Date());
         }
     }, []);
+
+    const handleOpenModal = (task: SerializableActionItem) => {
+        if (!task.isCompleted) {
+            setModalState({ isOpen: true, task });
+        }
+    };
+    
+    const handleSuccess = () => {
+        setModalState({ isOpen: false, task: null });
+        // The page will be revalidated by the server action, no need for client-side state update
+        // However, we can increment a key to ensure components depending on `process` re-render if needed
+        setKey(prev => prev + 1);
+    };
     
     const daysWithTasks = useMemo(() => {
         return process.actionPlan?.map(item => item.dueDate ? new Date(item.dueDate) : null).filter((d): d is Date => !!d) || [];
@@ -123,130 +144,146 @@ export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
     }
 
     return (
-        <div className="bg-background min-h-screen">
-            <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
-                <div className="flex items-center gap-3">
-                    <Logo className="h-8 w-8 text-primary" />
-                    <span className="font-semibold text-xl font-headline">Acompanhamento</span>
-                </div>
-                <div className='text-right'>
-                    <h1 className="font-semibold text-lg">{process.contactName}</h1>
-                    <p className="text-sm text-muted-foreground">{process.productName}</p>
-                </div>
-            </header>
-            <main className="p-4 md:p-8 grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-8">
-                    <section>
-                        <h2 className="font-headline text-2xl font-semibold mb-4">Plano de Ação</h2>
-                        
-                        {totalTasks > 0 && (
-                            <Card className="mb-6">
-                                <CardHeader>
-                                    <CardTitle>Progresso Geral</CardTitle>
-                                    <CardDescription>{completedTasks} de {totalTasks} tarefas concluídas.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center gap-4">
-                                        <Progress value={progressPercentage} className="w-full" />
-                                        <span className="font-semibold text-muted-foreground whitespace-nowrap">{Math.round(progressPercentage)}%</span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        <div className="grid gap-6 md:grid-cols-2">
-                             <Card>
-                                <CardContent className="p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={setSelectedDate}
-                                        className="rounded-md p-3"
-                                        modifiers={{
-                                            highlighted: daysWithTasks,
-                                        }}
-                                        modifiersClassNames={{
-                                            highlighted: "bg-primary/20 text-primary-foreground rounded-md",
-                                        }}
-                                    />
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        Tarefas para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className='space-y-4'>
-                                    {tasksForSelectedDay.length > 0 ? (
-                                        tasksForSelectedDay.map(item => (
-                                            <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
-                                                <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
-                                                <div className="grid gap-1">
-                                                    <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
-                                                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </section>
-                </div>
-
-                <aside className="space-y-6">
-                    <h2 className="font-headline text-2xl font-semibold">Histórico de Mentorias</h2>
-                     {sortedMentorships.length > 0 ? (
-                        <Accordion type="single" collapsible className="w-full">
-                            {sortedMentorships.map(mentorship => (
-                                <AccordionItem value={mentorship.id} key={mentorship.id}>
-                                    <AccordionTrigger>
-                                        Mentoria - {mentorship.createdAt ? format(new Date(mentorship.createdAt), 'dd/MM/yyyy') : 'Data não disponível'}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="space-y-4">
-                                        <div>
-                                            <h4 className="font-semibold mb-2">Resumo (Gerado por IA)</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{mentorship.summary}</p>
+        <>
+            <div className="bg-background min-h-screen" key={key}>
+                <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
+                    <div className="flex items-center gap-3">
+                        <Logo className="h-8 w-8 text-primary" />
+                        <span className="font-semibold text-xl font-headline">Acompanhamento</span>
+                    </div>
+                    <div className='text-right'>
+                        <h1 className="font-semibold text-lg">{process.contactName}</h1>
+                        <p className="text-sm text-muted-foreground">{process.productName}</p>
+                    </div>
+                </header>
+                <main className="p-4 md:p-8 grid gap-8 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-8">
+                        <section>
+                            <h2 className="font-headline text-2xl font-semibold mb-4">Plano de Ação</h2>
+                            
+                            {totalTasks > 0 && (
+                                <Card className="mb-6">
+                                    <CardHeader>
+                                        <CardTitle>Progresso Geral</CardTitle>
+                                        <CardDescription>{completedTasks} de {totalTasks} tarefas concluídas.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center gap-4">
+                                            <Progress value={progressPercentage} className="w-full" />
+                                            <span className="font-semibold text-muted-foreground whitespace-nowrap">{Math.round(progressPercentage)}%</span>
                                         </div>
-                                        
-                                        {mentorship.recordingUrl && (
-                                            <div>
-                                                <h4 className="font-semibold mb-2">Gravação</h4>
-                                                <audio controls src={mentorship.recordingUrl} className="w-full" />
-                                            </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            <div className="grid gap-6 md:grid-cols-2">
+                                <Card>
+                                    <CardContent className="p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={selectedDate}
+                                            onSelect={setSelectedDate}
+                                            className="rounded-md p-3"
+                                            modifiers={{
+                                                highlighted: daysWithTasks,
+                                            }}
+                                            modifiersClassNames={{
+                                                highlighted: "bg-primary/20 text-primary-foreground rounded-md",
+                                            }}
+                                            initialFocus
+                                        />
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>
+                                            Tarefas para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className='space-y-4'>
+                                        {tasksForSelectedDay.length > 0 ? (
+                                            tasksForSelectedDay.map(item => (
+                                                <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
+                                                    <Checkbox 
+                                                        id={`task-${item.id}`} 
+                                                        checked={item.isCompleted} 
+                                                        onCheckedChange={() => handleOpenModal(item)}
+                                                        disabled={item.isCompleted}
+                                                        className="mt-1"
+                                                    />
+                                                    <div className="grid gap-1 flex-1">
+                                                        <label htmlFor={`task-${item.id}`} className={cn("font-medium cursor-pointer", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</label>
+                                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
                                         )}
-    
-                                        {mentorship.documents && mentorship.documents.length > 0 && (
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </section>
+                    </div>
+
+                    <aside className="space-y-6">
+                        <h2 className="font-headline text-2xl font-semibold">Histórico de Mentorias</h2>
+                        {sortedMentorships.length > 0 ? (
+                            <Accordion type="single" collapsible className="w-full">
+                                {sortedMentorships.map(mentorship => (
+                                    <AccordionItem value={mentorship.id} key={mentorship.id}>
+                                        <AccordionTrigger>
+                                            Mentoria - {mentorship.createdAt ? format(new Date(mentorship.createdAt), 'dd/MM/yyyy') : 'Data não disponível'}
+                                        </AccordionTrigger>
+                                        <AccordionContent className="space-y-4">
                                             <div>
-                                                <h4 className="font-semibold mb-2">Documentos</h4>
-                                                <ul className="space-y-2">
-                                                    {mentorship.documents.map((doc, index) => (
-                                                       <li key={index}>
-                                                            <Button asChild variant="outline" size="sm">
-                                                              <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                                                <Download className="mr-2 h-4 w-4" />
-                                                                {doc.name}
-                                                              </a>
-                                                            </Button>
-                                                       </li>
-                                                    ))}
-                                                </ul>
+                                                <h4 className="font-semibold mb-2">Resumo (Gerado por IA)</h4>
+                                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{mentorship.summary}</p>
                                             </div>
-                                        )}
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                            Nenhum registro de mentoria encontrado.
-                        </p>
-                    )}
-                </aside>
-            </main>
-        </div>
+                                            
+                                            {mentorship.recordingUrl && (
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Gravação</h4>
+                                                    <audio controls src={mentorship.recordingUrl} className="w-full" />
+                                                </div>
+                                            )}
+        
+                                            {mentorship.documents && mentorship.documents.length > 0 && (
+                                                <div>
+                                                    <h4 className="font-semibold mb-2">Documentos</h4>
+                                                    <ul className="space-y-2">
+                                                        {mentorship.documents.map((doc, index) => (
+                                                        <li key={index}>
+                                                                <Button asChild variant="outline" size="sm">
+                                                                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    {doc.name}
+                                                                </a>
+                                                                </Button>
+                                                        </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                                Nenhum registro de mentoria encontrado.
+                            </p>
+                        )}
+                    </aside>
+                </main>
+            </div>
+            <SubmitTaskValidationModal 
+                isOpen={modalState.isOpen}
+                onOpenChange={(isOpen) => setModalState(prev => ({ ...prev, isOpen }))}
+                onSuccess={handleSuccess}
+                task={modalState.task}
+                processId={process.id}
+            />
+        </>
     );
 }

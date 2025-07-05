@@ -109,6 +109,9 @@ export type ActionItem = {
     description: string;
     dueDate: any; // Firestore Timestamp
     isCompleted: boolean;
+    validationText?: string;
+    validationAttachments?: { name: string; url: string }[];
+    submittedAt?: any; // Firestore Timestamp
 };
 
 export type FollowUpProcess = {
@@ -124,7 +127,10 @@ export type FollowUpProcess = {
 
 // Types for passing data from Server to Client Components
 export type SerializableMentorship = Omit<Mentorship, 'createdAt'> & { createdAt: string | null };
-export type SerializableActionItem = Omit<ActionItem, 'dueDate'> & { dueDate: string | null };
+export type SerializableActionItem = Omit<ActionItem, 'dueDate' | 'submittedAt'> & { 
+    dueDate: string | null;
+    submittedAt: string | null;
+};
 
 export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan'> & {
   mentorships?: SerializableMentorship[];
