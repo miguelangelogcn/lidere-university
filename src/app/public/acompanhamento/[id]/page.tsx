@@ -1,188 +1,192 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getFollowUpProcessById } from '@/services/followUpService';
-import type { FollowUpProcess, ActionItem, Mentorship } from '@/lib/types';
-import { notFound } from 'next/navigation';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { format, isSameDay } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { getFollowUpProcessById, updateFollowUpProcess } from '@/services/followUpService';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Logo } from "@/components/logo";
+import { Download } from "lucide-react";
+import { format, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CheckCircle2, Download } from 'lucide-react';
-import { Logo } from '@/components/logo';
+import type { FollowUpProcess } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
-type PublicAcompanhamentoPageProps = {
-    params: { id: string };
-};
 
-export default function PublicAcompanhamentoPage({ params }: PublicAcompanhamentoPageProps) {
-    const [process, setProcess] = useState<FollowUpProcess | null>(null);
+export default function PublicAcompanhamentoPage({ params }: { params: { id: string } }) {
+    const [followUpData, setFollowUpData] = useState<FollowUpProcess | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    const { toast } = useToast();
 
     useEffect(() => {
-        const fetchProcess = async () => {
-            const processData = await getFollowUpProcessById(params.id);
-            if (!processData) {
-                return notFound();
-            }
-            setProcess(processData);
-            setLoading(false);
-        };
-        fetchProcess();
+        if (params.id) {
+            getFollowUpProcessById(params.id)
+                .then(data => {
+                    setFollowUpData(data);
+                    setLoading(false);
+                })
+                .catch(err => {
+                    console.error(err);
+                    setLoading(false);
+                });
+        }
     }, [params.id]);
 
-    if (loading) {
-        return <div className="flex items-center justify-center h-screen">Carregando...</div>;
-    }
+    const handleToggleComplete = async (itemId: string) => {
+        if (!followUpData) return;
 
-    if (!process) {
-        return notFound();
-    }
+        const originalActionPlan = [...(followUpData.actionPlan || [])];
+        const updatedActionPlan = originalActionPlan.map(item =>
+            item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
+        );
+        
+        const newFollowUpData = { ...followUpData, actionPlan: updatedActionPlan };
+        setFollowUpData(newFollowUpData);
 
-    const sortedMentorships = process.mentorships?.sort((a, b) => {
-        const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date();
-        const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date();
+        try {
+            await updateFollowUpProcess(followUpData.id, { actionPlan: updatedActionPlan });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro!', description: 'Falha ao atualizar a tarefa.' });
+            setFollowUpData({ ...followUpData, actionPlan: originalActionPlan });
+        }
+    };
+
+
+    const sortedMentorships = followUpData?.mentorships?.sort((a, b) => {
+        const dateA = a.createdAt?.seconds ? new Date(a.createdAt.seconds * 1000) : new Date(0);
+        const dateB = b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000) : new Date(0);
         return dateB.getTime() - dateA.getTime();
     }) || [];
 
-    const actionItemsByDate = (process.actionPlan || []).reduce((acc, item) => {
-        if (!item.dueDate?.seconds) return acc;
-        const date = format(new Date(item.dueDate.seconds * 1000), 'yyyy-MM-dd');
-        if (!acc[date]) {
-            acc[date] = [];
-        }
-        acc[date].push(item);
-        return acc;
-    }, {} as Record<string, ActionItem[]>);
-    
-    const eventDays = Object.keys(actionItemsByDate).map(dateStr => new Date(dateStr));
+    const actionDays = (followUpData?.actionPlan || []).map(action => {
+        return action.dueDate?.seconds ? new Date(action.dueDate.seconds * 1000) : new Date(0);
+    });
 
-    const selectedDayActions = selectedDate ? (process.actionPlan || []).filter(item => item.dueDate?.seconds && isSameDay(new Date(item.dueDate.seconds * 1000), selectedDate)) : [];
+    const actionsForDay = (followUpData?.actionPlan || []).filter(action => {
+        if (!selectedDate || !action.dueDate?.seconds) return false;
+        return startOfDay(new Date(action.dueDate.seconds * 1000)).getTime() === startOfDay(selectedDate).getTime();
+    });
+
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen">Carregando...</div>;
+    }
+
+    if (!followUpData) {
+        return <div className="flex justify-center items-center h-screen">Acompanhamento não encontrado.</div>;
+    }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            <header className="py-6 px-4 sm:px-6 lg:px-8 border-b">
-                <div className="max-w-5xl mx-auto flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Logo className="h-8 w-8 text-primary" />
-                        <h1 className="text-2xl font-bold font-headline">Lidere University</h1>
+        <div className="bg-background min-h-screen">
+            <header className="p-4 border-b">
+                <div className="container mx-auto flex justify-between items-center">
+                    <div className="flex items-center gap-2 font-semibold font-headline">
+                        <Logo className="h-6 w-6 text-primary" />
+                        <span>Lidere University</span>
                     </div>
-                    <div className="text-right">
-                        <h2 className="text-xl font-semibold">{process.contactName}</h2>
-                        <p className="text-sm text-muted-foreground">{process.productName}</p>
-                    </div>
+                    <span className="text-sm text-muted-foreground">Formação Prática em Liderança e Gestão</span>
                 </div>
             </header>
 
-            <main className="py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-1">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Plano de Ação</CardTitle>
-                                <CardDescription>Selecione um dia para ver as ações.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex justify-center">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={setSelectedDate}
-                                    className="p-0"
-                                    locale={ptBR}
-                                    modifiers={{
-                                        events: eventDays,
-                                    }}
-                                    modifiersStyles={{
-                                        events: { 
-                                            textDecoration: 'underline',
-                                            textDecorationColor: 'hsl(var(--primary))',
-                                            textUnderlineOffset: '2px',
-                                        }
-                                    }}
-                                />
-                            </CardContent>
-                        </Card>
+            <main className="container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <aside className="lg:col-span-1 space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Plano de Ação</CardTitle>
+                            <CardDescription>Selecione um dia para ver as ações.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-center">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                modifiers={{ highlighted: actionDays }}
+                                modifiersStyles={{
+                                    highlighted: {
+                                        border: "2px solid hsl(var(--primary))",
+                                        borderRadius: 'var(--radius)'
+                                    },
+                                }}
+                                locale={ptBR}
+                            />
+                        </CardContent>
+                    </Card>
+                </aside>
+
+                <div className="lg:col-span-2 space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold font-headline mb-4">Ações para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'data selecionada'}</h2>
+                        <div className="space-y-4">
+                            {actionsForDay.length > 0 ? (
+                                actionsForDay.map(action => (
+                                    <div key={action.id} className="p-4 rounded-lg bg-card border flex items-start gap-4">
+                                        <Checkbox
+                                            id={`action-public-${action.id}`}
+                                            checked={action.isCompleted}
+                                            onCheckedChange={() => handleToggleComplete(action.id)}
+                                            className="mt-1"
+                                        />
+                                        <div className="flex-1 grid gap-1.5">
+                                            <label htmlFor={`action-public-${action.id}`} className={cn("font-medium cursor-pointer", action.isCompleted && "line-through text-muted-foreground")}>
+                                                {action.title}
+                                            </label>
+                                            <p className={cn("text-sm text-muted-foreground", action.isCompleted && "line-through")}>{action.description}</p>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-muted-foreground">Nenhuma ação para este dia.</p>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="md:col-span-2 space-y-8">
-                        <div>
-                             <h3 className="text-xl font-semibold mb-4">
-                                Ações para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'o dia selecionado'}
-                            </h3>
-                            {selectedDayActions.length > 0 ? (
-                                <ul className="space-y-3">
-                                    {selectedDayActions.map(item => (
-                                        <li key={item.id} className="flex items-start gap-4 p-4 border rounded-md bg-card">
-                                             <div className="w-5 h-5 mt-1 flex-shrink-0 rounded-full flex items-center justify-center bg-primary text-primary-foreground">
-                                                {item.isCompleted && <Check className="h-4 w-4" />}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className={cn("font-medium", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</p>
-                                                <p className={cn("text-sm text-muted-foreground", item.isCompleted && "line-through")}>{item.description}</p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-md">
-                                    Nenhuma ação proposta para este dia.
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <h3 className="text-xl font-semibold mb-4">Histórico de Mentorias</h3>
-                            {sortedMentorships.length > 0 ? (
-                                <Accordion type="single" collapsible className="w-full">
-                                    {sortedMentorships.map(mentorship => (
-                                        <AccordionItem value={mentorship.id} key={mentorship.id}>
-                                            <AccordionTrigger>
-                                                Mentoria - {mentorship.createdAt?.seconds ? format(new Date(mentorship.createdAt.seconds * 1000), 'dd/MM/yyyy') : 'Data não disponível'}
-                                            </AccordionTrigger>
-                                            <AccordionContent className="space-y-4">
-                                                <div>
-                                                    <h4 className="font-semibold mb-2">Resumo</h4>
-                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{mentorship.summary}</p>
-                                                </div>
-                                                
-                                                {mentorship.recordingUrl && (
-                                                    <div>
-                                                        <h4 className="font-semibold mb-2">Gravação</h4>
-                                                        <audio controls src={mentorship.recordingUrl} className="w-full" />
-                                                    </div>
-                                                )}
-            
-                                                {mentorship.documents && mentorship.documents.length > 0 && (
-                                                    <div>
-                                                        <h4 className="font-semibold mb-2">Documentos</h4>
-                                                        <ul className="space-y-2">
-                                                            {mentorship.documents.map((doc, index) => (
-                                                               <li key={index}>
-                                                                    <Button asChild variant="outline" size="sm">
-                                                                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                                                        <Download className="mr-2 h-4 w-4" />
-                                                                        {doc.name}
-                                                                      </a>
-                                                                    </Button>
-                                                               </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            ) : (
-                                <div className="text-sm text-muted-foreground text-center py-6 border border-dashed rounded-md">
-                                    Nenhum registro de mentoria encontrado.
-                                </div>
-                            )}
-                        </div>
+                    <div>
+                         <h2 className="text-2xl font-bold font-headline mb-4">Histórico de Mentorias</h2>
+                         {sortedMentorships.length > 0 ? (
+                             <Accordion type="single" collapsible className="w-full">
+                                 {sortedMentorships.map(mentorship => (
+                                     <AccordionItem value={mentorship.id} key={mentorship.id}>
+                                         <AccordionTrigger>
+                                             Mentoria - {mentorship.createdAt?.seconds ? format(new Date(mentorship.createdAt.seconds * 1000), 'dd/MM/yyyy') : 'Data não disponível'}
+                                         </AccordionTrigger>
+                                         <AccordionContent className="space-y-4">
+                                             <div>
+                                                 <h4 className="font-semibold mb-2">Resumo</h4>
+                                                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{mentorship.summary}</p>
+                                             </div>
+                                             {mentorship.recordingUrl && (
+                                                 <div>
+                                                     <h4 className="font-semibold mb-2">Gravação</h4>
+                                                     <audio controls src={mentorship.recordingUrl} className="w-full" />
+                                                 </div>
+                                             )}
+                                             {mentorship.documents && mentorship.documents.length > 0 && (
+                                                 <div>
+                                                     <h4 className="font-semibold mb-2">Documentos</h4>
+                                                     <ul className="space-y-2">
+                                                         {mentorship.documents.map((doc, index) => (
+                                                            <li key={index}>
+                                                                 <Button asChild variant="outline" size="sm">
+                                                                   <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                                     <Download className="mr-2 h-4 w-4" />
+                                                                     {doc.name}
+                                                                   </a>
+                                                                 </Button>
+                                                            </li>
+                                                         ))}
+                                                     </ul>
+                                                 </div>
+                                             )}
+                                         </AccordionContent>
+                                     </AccordionItem>
+                                 ))}
+                             </Accordion>
+                         ) : (
+                             <p className="text-sm text-muted-foreground">Nenhum registro de mentoria encontrado.</p>
+                         )}
                     </div>
                 </div>
             </main>

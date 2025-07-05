@@ -95,7 +95,11 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
         }
     };
 
-    const sortedActionPlan = (process.actionPlan || []).sort((a, b) => a.dueDate.seconds - b.dueDate.seconds);
+    const sortedActionPlan = [...(process.actionPlan || [])].sort((a, b) => {
+        const dateA = a.dueDate?.seconds ? a.dueDate.seconds : Infinity;
+        const dateB = b.dueDate?.seconds ? b.dueDate.seconds : Infinity;
+        return dateA - dateB;
+    });
 
     return (
         <div className="space-y-6">
@@ -142,7 +146,7 @@ export function ActionPlanManager({ process, onSuccess }: ActionPlanManagerProps
                                     </label>
                                     <p className={cn("text-sm text-muted-foreground", item.isCompleted && "line-through")}>{item.description}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Vencimento: {item.dueDate.seconds ? format(new Date(item.dueDate.seconds * 1000), 'dd/MM/yyyy') : 'Data inválida'}
+                                        Vencimento: {item.dueDate?.seconds ? format(new Date(item.dueDate.seconds * 1000), 'dd/MM/yyyy') : 'Data inválida'}
                                     </p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(item.id)}>
