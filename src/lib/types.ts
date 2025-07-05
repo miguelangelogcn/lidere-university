@@ -121,3 +121,12 @@ export type FollowUpProcess = {
   mentorships?: Mentorship[];
   actionPlan?: ActionItem[];
 };
+
+// Types for passing data from Server to Client Components
+export type SerializableMentorship = Omit<Mentorship, 'createdAt'> & { createdAt: string };
+export type SerializableActionItem = Omit<ActionItem, 'dueDate'> & { dueDate: string };
+
+export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan'> & {
+  mentorships?: SerializableMentorship[];
+  actionPlan?: SerializableActionItem[];
+};

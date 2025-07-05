@@ -1,0 +1,149 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Logo } from "./logo";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Button } from './ui/button';
+import { Download } from 'lucide-react';
+import { format, isSameDay } from 'date-fns';
+import { Calendar } from './ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Checkbox } from './ui/checkbox';
+import type { SerializableFollowUpProcess } from '@/lib/types';
+
+type PublicFollowUpViewProps = {
+    process: SerializableFollowUpProcess;
+};
+
+export function PublicFollowUpView({ process }: PublicFollowUpViewProps) {
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    
+    const daysWithTasks = useMemo(() => {
+        return process.actionPlan?.map(item => new Date(item.dueDate)) || [];
+    }, [process.actionPlan]);
+
+    const tasksForSelectedDay = useMemo(() => {
+        if (!selectedDate || !process.actionPlan) return [];
+        return process.actionPlan.filter(item => 
+            isSameDay(new Date(item.dueDate), selectedDate)
+        ).sort((a,b) => a.title.localeCompare(b.title));
+    }, [selectedDate, process.actionPlan]);
+
+    const sortedMentorships = useMemo(() => {
+        return [...(process.mentorships || [])].sort((a, b) => {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+    }, [process.mentorships]);
+
+    return (
+        <div className="bg-background min-h-screen">
+            <header className="py-4 px-6 border-b flex items-center justify-between bg-card">
+                <div className="flex items-center gap-3">
+                    <Logo className="h-8 w-8 text-primary" />
+                    <span className="font-semibold text-xl font-headline">Acompanhamento</span>
+                </div>
+                <div className='text-right'>
+                    <h1 className="font-semibold text-lg">{process.contactName}</h1>
+                    <p className="text-sm text-muted-foreground">{process.productName}</p>
+                </div>
+            </header>
+            <main className="p-4 md:p-8 grid gap-8 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-8">
+                    <section>
+                        <h2 className="font-headline text-2xl font-semibold mb-4">Plano de Ação</h2>
+                        <div className="grid gap-6 md:grid-cols-2">
+                             <Card>
+                                <CardContent className="p-2">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        className="rounded-md"
+                                        modifiers={{
+                                            highlighted: daysWithTasks,
+                                        }}
+                                        modifiersClassNames={{
+                                            highlighted: "bg-primary/20 text-primary-foreground rounded-md",
+                                        }}
+                                    />
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>
+                                        Tarefas para {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : '...'}
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className='space-y-4'>
+                                    {tasksForSelectedDay.length > 0 ? (
+                                        tasksForSelectedDay.map(item => (
+                                            <div key={item.id} className="flex items-start gap-3 p-3 border rounded-md bg-background">
+                                                <Checkbox id={`task-${item.id}`} checked={item.isCompleted} className="mt-1" disabled />
+                                                <div className="grid gap-1">
+                                                    <label htmlFor={`task-${item.id}`} className="font-medium">{item.title}</label>
+                                                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </section>
+                </div>
+
+                <aside className="space-y-6">
+                    <h2 className="font-headline text-2xl font-semibold">Histórico de Mentorias</h2>
+                     {sortedMentorships.length > 0 ? (
+                        <Accordion type="single" collapsible className="w-full">
+                            {sortedMentorships.map(mentorship => (
+                                <AccordionItem value={mentorship.id} key={mentorship.id}>
+                                    <AccordionTrigger>
+                                        Mentoria - {mentorship.createdAt ? format(new Date(mentorship.createdAt), 'dd/MM/yyyy') : 'Data não disponível'}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="space-y-4">
+                                        <div>
+                                            <h4 className="font-semibold mb-2">Resumo (Gerado por IA)</h4>
+                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{mentorship.summary}</p>
+                                        </div>
+                                        
+                                        {mentorship.recordingUrl && (
+                                            <div>
+                                                <h4 className="font-semibold mb-2">Gravação</h4>
+                                                <audio controls src={mentorship.recordingUrl} className="w-full" />
+                                            </div>
+                                        )}
+    
+                                        {mentorship.documents && mentorship.documents.length > 0 && (
+                                            <div>
+                                                <h4 className="font-semibold mb-2">Documentos</h4>
+                                                <ul className="space-y-2">
+                                                    {mentorship.documents.map((doc, index) => (
+                                                       <li key={index}>
+                                                            <Button asChild variant="outline" size="sm">
+                                                              <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                {doc.name}
+                                                              </a>
+                                                            </Button>
+                                                       </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                            Nenhum registro de mentoria encontrado.
+                        </p>
+                    )}
+                </aside>
+            </main>
+        </div>
+    );
+}
