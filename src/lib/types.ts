@@ -9,6 +9,7 @@ export type Contact = {
   age?: number | null;
   gender?: string | null;
   avatarUrl?: string | null;
+  studentAccess?: { userId: string } | null;
 };
 
 export type PipelineStage = {

@@ -67,6 +67,7 @@ export const appModules: Module[] = [
     name: "Diretoria",
     items: [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
+      { href: "/gerenciar-alunos", icon: GraduationCap, label: "Gerenciar Alunos" },
       { href: "/roles", icon: Briefcase, label: "Gerenciar Cargos" },
       { href: "/tags", icon: Tag, label: "Gerenciar Tags" },
       { href: "/products", icon: Package, label: "Gerenciar Produtos" },

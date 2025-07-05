@@ -17,6 +17,7 @@ function docToContact(doc: DocumentData): Contact {
         age: data.age || null,
         gender: data.gender || null,
         avatarUrl: data.avatarUrl || null,
+        studentAccess: data.studentAccess || null,
     };
 }
 
@@ -35,7 +36,7 @@ export async function getContacts(): Promise<Contact[]> {
   }
 }
 
-export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl'>): Promise<void> {
+export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess'>): Promise<void> {
     try {
         const contactsCollection = collection(db, 'contacts');
         await addDoc(contactsCollection, data);
