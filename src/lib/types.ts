@@ -84,7 +84,7 @@ export type Onboarding = {
   steps: OnboardingStep[];
 };
 
-export type Delivery = {
+export type OnboardingProcess = {
   id: string;
   contactId: string;
   contactName: string;

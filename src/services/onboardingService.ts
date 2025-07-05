@@ -4,12 +4,12 @@ import { db } from '@/lib/firebase';
 import type { Onboarding, OnboardingStep } from '@/lib/types';
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 
-// The document ID for an onboarding will be the product ID.
-const onboardingCollection = collection(db, 'onboardings');
+// The document ID for an onboarding template will be the product ID.
+const onboardingTemplateCollection = collection(db, 'onboardingTemplates');
 
 export async function getOnboardingSteps(productId: string): Promise<OnboardingStep[]> {
   try {
-    const onboardingDocRef = doc(onboardingCollection, productId);
+    const onboardingDocRef = doc(onboardingTemplateCollection, productId);
     const docSnap = await getDoc(onboardingDocRef);
 
     if (docSnap.exists()) {
@@ -30,7 +30,7 @@ export async function updateOnboardingSteps(
   steps: Omit<OnboardingStep, 'id'>[]
 ): Promise<void> {
   try {
-    const onboardingDocRef = doc(onboardingCollection, productId);
+    const onboardingDocRef = doc(onboardingTemplateCollection, productId);
 
     const stepsWithIds: OnboardingStep[] = steps.map((step) => ({
       ...step,

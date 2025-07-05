@@ -2,16 +2,16 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Delivery } from '@/lib/types';
+import type { OnboardingProcess } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { User, Package } from 'lucide-react';
 
-type DeliveryCardProps = {
-  delivery: Delivery;
+type OnboardingCardProps = {
+  onboardingProcess: OnboardingProcess;
   onClick: () => void;
 };
 
-export function DeliveryCard({ delivery, onClick }: DeliveryCardProps) {
+export function DeliveryCard({ onboardingProcess, onClick }: OnboardingCardProps) {
   const {
     attributes,
     listeners,
@@ -19,7 +19,7 @@ export function DeliveryCard({ delivery, onClick }: DeliveryCardProps) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: delivery.id });
+  } = useSortable({ id: onboardingProcess.id });
 
   const style = {
     transition,
@@ -35,10 +35,10 @@ export function DeliveryCard({ delivery, onClick }: DeliveryCardProps) {
         }`}
       >
         <CardHeader className="p-4">
-          <CardTitle className="text-base font-semibold">{delivery.contactName}</CardTitle>
+          <CardTitle className="text-base font-semibold">{onboardingProcess.contactName}</CardTitle>
           <CardDescription className="flex items-center gap-2 pt-1 text-xs">
             <Package className="h-3 w-3" />
-            {delivery.productName}
+            {onboardingProcess.productName}
           </CardDescription>
         </CardHeader>
       </Card>

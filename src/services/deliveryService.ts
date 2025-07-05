@@ -1,10 +1,12 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import type { Delivery } from '@/lib/types';
+import type { OnboardingProcess } from '@/lib/types';
 import { collection, getDocs, doc, updateDoc, addDoc, type DocumentData } from 'firebase/firestore';
 
-function docToDelivery(doc: DocumentData): Delivery {
+const onboardingProcessCollection = collection(db, 'onboardings');
+
+function docToOnboardingProcess(doc: DocumentData): OnboardingProcess {
     const data = doc.data();
     return {
         id: doc.id,
@@ -18,40 +20,39 @@ function docToDelivery(doc: DocumentData): Delivery {
 }
 
 
-export async function getDeliveries(): Promise<Delivery[]> {
+export async function getOnboardingProcesses(): Promise<OnboardingProcess[]> {
     try {
-        const deliveriesCollection = collection(db, 'deliveries');
-        const snapshot = await getDocs(deliveriesCollection);
+        const snapshot = await getDocs(onboardingProcessCollection);
         if (snapshot.empty) {
             return [];
         }
-        return snapshot.docs.map(docToDelivery);
+        return snapshot.docs.map(docToOnboardingProcess);
     } catch (error) {
-        console.error("Error fetching deliveries: ", error);
+        console.error("Error fetching onboarding processes: ", error);
         return [];
     }
 }
 
-export async function createDelivery(data: { contactId: string, contactName: string, productId: string, productName: string }): Promise<void> {
+export async function createOnboardingProcess(data: { contactId: string, contactName: string, productId: string, productName: string }): Promise<void> {
     try {
-        const deliveryData: Omit<Delivery, 'id'> = {
+        const onboardingData: Omit<OnboardingProcess, 'id'> = {
             ...data,
             status: 'todo',
             onboardingProgress: {}
         };
-        await addDoc(collection(db, 'deliveries'), deliveryData);
+        await addDoc(onboardingProcessCollection, onboardingData);
     } catch (error) {
-        console.error("Error creating delivery:", error);
-        throw new Error("Falha ao criar a entrega.");
+        console.error("Error creating onboarding process:", error);
+        throw new Error("Falha ao criar o onboarding.");
     }
 }
 
-export async function updateDelivery(deliveryId: string, data: Partial<Omit<Delivery, 'id'>>): Promise<void> {
+export async function updateOnboardingProcess(onboardingId: string, data: Partial<Omit<OnboardingProcess, 'id'>>): Promise<void> {
     try {
-        const deliveryDoc = doc(db, 'deliveries', deliveryId);
-        await updateDoc(deliveryDoc, data);
+        const onboardingDoc = doc(db, 'onboardings', onboardingId);
+        await updateDoc(onboardingDoc, data);
     } catch (error) {
-        console.error(`Error updating delivery ${deliveryId}:`, error);
-        throw new Error("Falha ao atualizar a entrega.");
+        console.error(`Error updating onboarding process ${onboardingId}:`, error);
+        throw new Error("Falha ao atualizar o onboarding.");
     }
 }

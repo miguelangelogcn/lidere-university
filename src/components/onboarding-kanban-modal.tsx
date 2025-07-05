@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import type { Delivery, OnboardingStep } from "@/lib/types";
+import type { OnboardingProcess, OnboardingStep } from "@/lib/types";
 import { getOnboardingSteps } from "@/services/onboardingService";
-import { updateDelivery } from "@/services/deliveryService";
+import { updateOnboardingProcess } from "@/services/deliveryService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -12,24 +12,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 type OnboardingKanbanModalProps = {
-  delivery: Delivery | null;
+  onboardingProcess: OnboardingProcess | null;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 };
 
-export function OnboardingKanbanModal({ delivery, onOpenChange, onSuccess }: OnboardingKanbanModalProps) {
+export function OnboardingKanbanModal({ onboardingProcess, onOpenChange, onSuccess }: OnboardingKanbanModalProps) {
   const [onboardingSteps, setOnboardingSteps] = useState<OnboardingStep[]>([]);
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
-    if (delivery?.productId) {
+    if (onboardingProcess?.productId) {
       async function fetchOnboarding() {
         setLoadingSteps(true);
-        const steps = await getOnboardingSteps(delivery.productId);
+        const steps = await getOnboardingSteps(onboardingProcess.productId);
         setOnboardingSteps(steps);
-        setCheckedSteps(delivery.onboardingProgress || {});
+        setCheckedSteps(onboardingProcess.onboardingProgress || {});
         setLoadingSteps(false);
       }
       fetchOnboarding();
@@ -37,10 +37,10 @@ export function OnboardingKanbanModal({ delivery, onOpenChange, onSuccess }: Onb
       setOnboardingSteps([]);
       setCheckedSteps({});
     }
-  }, [delivery]);
+  }, [onboardingProcess]);
   
   const handleCheckChange = async (stepId: string) => {
-    if (!delivery) return;
+    if (!onboardingProcess) return;
 
     const newCheckedState = !checkedSteps[stepId];
     const newProgress = { ...checkedSteps, [stepId]: newCheckedState };
@@ -49,7 +49,7 @@ export function OnboardingKanbanModal({ delivery, onOpenChange, onSuccess }: Onb
     setCheckedSteps(newProgress);
 
     try {
-        await updateDelivery(delivery.id, { onboardingProgress: newProgress });
+        await updateOnboardingProcess(onboardingProcess.id, { onboardingProgress: newProgress });
         onSuccess(); // Refreshes the main board if needed
     } catch(err) {
         toast({ variant: 'destructive', title: 'Erro!', description: 'Falha ao salvar progresso.' });
@@ -66,14 +66,14 @@ export function OnboardingKanbanModal({ delivery, onOpenChange, onSuccess }: Onb
   const days = Array.from({ length: 8 }, (_, i) => i); // D0 to D7
 
   return (
-    <Dialog open={!!delivery} onOpenChange={onOpenChange}>
+    <Dialog open={!!onboardingProcess} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl h-[90vh] flex flex-col p-0">
-        {delivery && (
+        {onboardingProcess && (
           <>
             <DialogHeader className="p-6 pb-2">
-              <DialogTitle>Entrega: {delivery.productName}</DialogTitle>
+              <DialogTitle>Onboarding: {onboardingProcess.productName}</DialogTitle>
               <DialogDescription>
-                Cliente: {delivery.contactName} - Acompanhe as tarefas do onboarding.
+                Cliente: {onboardingProcess.contactName} - Acompanhe as tarefas do onboarding.
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-hidden px-6 pb-6">
