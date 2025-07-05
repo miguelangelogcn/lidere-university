@@ -63,6 +63,7 @@ export default function GerenciarAlunosPage() {
     const [isGrantAccessDialogOpen, setIsGrantAccessDialogOpen] = useState(false);
     const [isRevokeAccessDialogOpen, setIsRevokeAccessDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [isNoEmailAlertOpen, setIsNoEmailAlertOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const { toast } = useToast();
 
@@ -92,6 +93,15 @@ export default function GerenciarAlunosPage() {
         setIsEditDialogOpen(false);
         setSelectedContact(null);
         fetchData();
+    };
+    
+    const handleGrantAccessClick = (contact: Contact) => {
+        setSelectedContact(contact);
+        if (contact.email) {
+            setIsGrantAccessDialogOpen(true);
+        } else {
+            setIsNoEmailAlertOpen(true);
+        }
     };
 
     const handleRevokeAccess = async () => {
@@ -176,7 +186,7 @@ export default function GerenciarAlunosPage() {
                                     Revogar Acesso
                                 </DropdownMenuItem>
                             ) : (
-                                <DropdownMenuItem onSelect={() => { setSelectedContact(contact); setIsGrantAccessDialogOpen(true); }} disabled={!contact.email}>
+                                <DropdownMenuItem onSelect={() => handleGrantAccessClick(contact)}>
                                     Conceder Acesso
                                 </DropdownMenuItem>
                             )}
@@ -234,6 +244,23 @@ export default function GerenciarAlunosPage() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleRevokeAccess} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Revogar Acesso
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isNoEmailAlertOpen} onOpenChange={setIsNoEmailAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Email Necessário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para conceder acesso de aluno, o contato precisa ter um endereço de email cadastrado. Por favor, edite o contato para adicionar um email.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedContact(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setIsNoEmailAlertOpen(false); setIsEditDialogOpen(true); }}>
+                Editar Contato
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
