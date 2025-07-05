@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { FollowUpProcess } from '@/lib/types';
-import { collection, getDocs, type DocumentData } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, addDoc } from 'firebase/firestore';
 
 const followUpCollection = collection(db, 'acompanhamentos');
 
@@ -28,5 +28,23 @@ export async function getFollowUpProcesses(): Promise<FollowUpProcess[]> {
     } catch (error) {
         console.error("Error fetching follow-up processes: ", error);
         return [];
+    }
+}
+
+export async function createFollowUpProcess(data: {
+    contactId: string;
+    contactName: string;
+    productId: string;
+    productName: string;
+}): Promise<void> {
+    try {
+        const followUpData: Omit<FollowUpProcess, 'id'> = {
+            ...data,
+            status: 'todo',
+        };
+        await addDoc(followUpCollection, followUpData);
+    } catch (error) {
+        console.error("Error creating follow-up process:", error);
+        throw new Error("Falha ao criar o acompanhamento.");
     }
 }
