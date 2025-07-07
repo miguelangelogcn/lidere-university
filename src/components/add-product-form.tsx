@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -14,14 +15,18 @@ import { getFormations } from '@/services/formationService';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { PlusCircle, Trash2, Loader2, Upload, X, ChevronDown, ClipboardCheck, Info } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Upload, X, ChevronDown, ClipboardCheck, Info, ChevronsUpDown, Check } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Separator } from './ui/separator';
 import { Accordion, AccordionContent as OnboardingAccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import type { SerializableFormation } from '@/lib/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { Alert, AlertDescription } from './ui/alert';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk';
+import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from './ui/card';
 
 const onboardingStepSchema = z.object({
   title: z.string().min(1, 'O título da etapa é obrigatório.'),
@@ -36,7 +41,7 @@ const productSchema = z.object({
   warranty: z.string().min(1, 'A garantia é obrigatória.'),
   presentationUrl: z.string().optional(),
   onboardingSteps: z.array(onboardingStepSchema).optional(),
-  formationId: z.string().nullable().optional(),
+  formationIds: z.array(z.string()).optional(),
   hasFollowUp: z.boolean().default(false),
   contentAccessDays: z.coerce.number().int().min(0, "Deve ser um número positivo ou zero.").optional().nullable(),
   followUpDays: z.coerce.number().int().min(0, "Deve ser um número positivo ou zero.").optional().nullable(),
@@ -73,7 +78,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       warranty: '',
       presentationUrl: '',
       onboardingSteps: [],
-      formationId: null,
+      formationIds: [],
       hasFollowUp: false,
       contentAccessDays: null,
       followUpDays: null,
@@ -134,9 +139,9 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
     try {
       const productData = {
         ...data,
+        formationIds: data.formationIds || [],
         contentAccessDays: data.contentAccessDays || null,
         followUpDays: data.followUpDays || null,
-        formationId: data.formationId || null,
         deliverables: data.deliverables.map(d => d.value),
         onboardingSteps: (data.onboardingSteps || []).reduce((acc, step) => {
             const day = step.day;
@@ -206,27 +211,70 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
             <h3 className="font-medium">Acesso e Acompanhamento</h3>
              <FormField
                 control={form.control}
-                name="formationId"
+                name="formationIds"
                 render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Formação Vinculada (Conteúdo)</FormLabel>
-                        <Select
-                            onValueChange={(value) => field.onChange(value === '--none--' ? null : value)}
-                            value={field.value ?? '--none--'}
-                        >
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Nenhuma formação vinculada" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="--none--">Nenhuma formação vinculada</SelectItem>
-                                {formations.map(f => (
-                                    <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormDescription>Selecione a formação que este produto dará acesso.</FormDescription>
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Formações Vinculadas (Conteúdo)</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className={cn(
+                                            "w-full justify-between h-auto min-h-10",
+                                            !field.value?.length && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <div className="flex gap-1 flex-wrap">
+                                            {formations
+                                                .filter(f => field.value?.includes(f.id))
+                                                .map((f) => (
+                                                    <Badge variant="secondary" key={f.id} className="mr-1">
+                                                        {f.title}
+                                                    </Badge>
+                                                ))}
+                                            {(!field.value || field.value.length === 0) && "Selecione as formações"}
+                                        </div>
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                <Command>
+                                    <CommandInput placeholder="Buscar formação..." />
+                                    <CommandList>
+                                        <CommandEmpty>Nenhuma formação encontrada.</CommandEmpty>
+                                        <CommandGroup>
+                                            {formations.map((f) => (
+                                                <CommandItem
+                                                    value={f.title}
+                                                    key={f.id}
+                                                    onSelect={() => {
+                                                        const currentIds = field.value || [];
+                                                        const newValue = currentIds.includes(f.id)
+                                                            ? currentIds.filter((id) => id !== f.id)
+                                                            : [...currentIds, f.id];
+                                                        form.setValue("formationIds", newValue, { shouldDirty: true });
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            field.value?.includes(f.id)
+                                                                ? "opacity-100"
+                                                                : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {f.title}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                        <FormDescription>Selecione as formações que este produto dará acesso.</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}

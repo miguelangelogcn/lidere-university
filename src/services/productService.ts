@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -14,7 +15,7 @@ function docToProduct(doc: DocumentData): Product {
         deliverables: data.deliverables || [],
         presentationUrl: data.presentationUrl || null,
         warranty: data.warranty || '',
-        formationId: data.formationId || null,
+        formationIds: data.formationIds || [],
         contentAccessDays: data.contentAccessDays ?? null,
         hasFollowUp: data.hasFollowUp || false,
         followUpDays: data.followUpDays ?? null,

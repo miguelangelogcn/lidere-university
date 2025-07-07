@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, auth } from '@/lib/firebase';
@@ -76,18 +77,22 @@ export async function importContacts(
                         
                         for (const name of productNames) {
                             const product = productNameMap.get(name);
-                            if (product && product.formationId && !addedFormationIds.has(product.formationId)) {
-                                let expiresAt: Date | null = null;
-                                if (product.contentAccessDays && product.contentAccessDays > 0) {
-                                    expiresAt = new Date();
-                                    expiresAt.setDate(expiresAt.getDate() + product.contentAccessDays);
+                            if (product && product.formationIds) {
+                                for (const formationId of product.formationIds) {
+                                    if (!addedFormationIds.has(formationId)) {
+                                        let expiresAt: Date | null = null;
+                                        if (product.contentAccessDays && product.contentAccessDays > 0) {
+                                            expiresAt = new Date();
+                                            expiresAt.setDate(expiresAt.getDate() + product.contentAccessDays);
+                                        }
+                                        
+                                        formationAccess.push({
+                                            formationId: formationId,
+                                            expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
+                                        });
+                                        addedFormationIds.add(formationId);
+                                    }
                                 }
-                                
-                                formationAccess.push({
-                                    formationId: product.formationId,
-                                    expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
-                                });
-                                addedFormationIds.add(product.formationId);
                             } else if (!product) {
                                 results.errors.push(`Aviso para ${contactEmail}: Produto '${name}' não encontrado e ignorado.`);
                             }

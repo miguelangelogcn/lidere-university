@@ -1,4 +1,5 @@
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -76,7 +77,7 @@ export type Product = {
   deliverables: string[];
   presentationUrl?: string | null;
   warranty: string;
-  formationId: string | null;
+  formationIds: string[];
   contentAccessDays: number | null;
   hasFollowUp: boolean;
   followUpDays: number | null;
