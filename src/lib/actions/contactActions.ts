@@ -1,4 +1,3 @@
-
 'use server';
 
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
@@ -6,8 +5,6 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { getProducts } from '@/services/productService';
 import type { Product } from '@/lib/types';
-import { generateWelcomeEmail } from '@/ai/flows/generate-welcome-email-flow';
-import { sendEmail } from '@/services/emailService';
 
 
 async function generateUniquePassword() {
@@ -120,24 +117,6 @@ export async function importContacts(
                         studentAccess: { userId: userRecord.uid },
                         formationAccess: formationAccess,
                     });
-
-                    const loginUrl = process.env.NEXT_PUBLIC_BASE_URL
-                      ? `${process.env.NEXT_PUBLIC_BASE_URL}/login`
-                      : 'http://localhost:9002/login';
-
-                    const emailContent = await generateWelcomeEmail({
-                        name: contactData.name,
-                        email: contactEmail,
-                        password: password,
-                        loginUrl: loginUrl,
-                    });
-
-                    await sendEmail({
-                        to: contactEmail,
-                        subject: emailContent.subject,
-                        htmlBody: emailContent.body,
-                    });
-
 
                 } catch (authError: any) {
                      throw new Error(`Falha ao criar usuário de autenticação para ${contactEmail}: ${authError.code}`);
