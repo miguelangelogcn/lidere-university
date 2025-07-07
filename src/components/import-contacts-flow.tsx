@@ -1,23 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Papa from 'papaparse';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
-import { getFormations } from '@/services/formationService';
 import { importContacts } from '@/lib/actions/contactActions';
-import type { SerializableFormation } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk';
-import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Check, ChevronsUpDown, FileUp, Download, CalendarIcon, Loader2, Info } from 'lucide-react';
+import { FileUp, Download, CalendarIcon, Loader2, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Progress } from './ui/progress';
@@ -35,6 +31,7 @@ const OPTIONAL_FIELDS = [
     { id: 'tags', label: 'Tags (separadas por vírgula)' },
     { id: 'city', label: 'Cidade' },
     { id: 'isStudent', label: 'É Aluno (true/false)' },
+    { id: 'formations', label: 'Formações (nomes por vírgula)' },
 ];
 
 export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
@@ -42,20 +39,11 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
     const [file, setFile] = useState<File | null>(null);
     const [csvData, setCsvData] = useState<{ headers: string[]; rows: any[] }>({ headers: [], rows: [] });
     const [mappings, setMappings] = useState<Record<string, string>>({});
-    const [formations, setFormations] = useState<SerializableFormation[]>([]);
-    const [studentConfig, setStudentConfig] = useState({ grantAccess: false, formationIds: [] as string[], expiresAt: null as Date | null });
+    const [studentConfig, setStudentConfig] = useState({ grantAccess: false, expiresAt: null as Date | null });
     const [isParsing, setIsParsing] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
     const { toast } = useToast();
-
-    useEffect(() => {
-        async function loadFormations() {
-            const data = await getFormations();
-            setFormations(data);
-        }
-        loadFormations();
-    }, []);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
@@ -101,7 +89,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
     };
     
     const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo";
+        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city,formations\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo,\"Curso de Vendas,Curso de Marketing\"";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -123,7 +111,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
         setFile(null);
         setCsvData({ headers: [], rows: [] });
         setMappings({});
-        setStudentConfig({ grantAccess: false, formationIds: [], expiresAt: null });
+        setStudentConfig({ grantAccess: false, expiresAt: null });
         setImportResult(null);
     }
     
@@ -167,36 +155,6 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                             Criar acesso de aluno para contatos com email e marcados como "É Aluno".
                                             <p className="text-xs text-muted-foreground">Uma senha aleatória será criada para cada novo aluno.</p>
                                         </Label>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Formações para conceder acesso</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" role="combobox" className={cn("w-full justify-between h-auto min-h-10", !studentConfig.formationIds.length && "text-muted-foreground")} disabled={!studentConfig.grantAccess}>
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {formations.filter(f => studentConfig.formationIds.includes(f.id)).map(f => (<Badge variant="secondary" key={f.id}>{f.title}</Badge>))}
-                                                        {studentConfig.formationIds.length === 0 && "Selecione as formações"}
-                                                    </div>
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                <Command>
-                                                    <CommandInput placeholder="Buscar formação..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>Nenhuma formação encontrada.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {formations.map((f) => (
-                                                                <CommandItem value={f.title} key={f.id} onSelect={() => setStudentConfig(prev => ({...prev, formationIds: prev.formationIds.includes(f.id) ? prev.formationIds.filter(id => id !== f.id) : [...prev.formationIds, f.id]}))}>
-                                                                    <Check className={cn("mr-2 h-4 w-4", studentConfig.formationIds.includes(f.id) ? "opacity-100" : "opacity-0")} />
-                                                                    {f.title}
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Data de Expiração (opcional)</Label>
@@ -270,7 +228,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         {studentConfig.grantAccess && (
                                             <>
                                                 <li>Contatos marcados como alunos com um email válido receberão acesso.</li>
-                                                <li>Acesso será concedido a <span className="font-bold">{studentConfig.formationIds.length}</span> formação(ões).</li>
+                                                <li>O acesso às formações será concedido com base na coluna 'Formações' do seu arquivo.</li>
                                                 <li>O acesso <span className="font-bold">{studentConfig.expiresAt ? `expira em ${format(studentConfig.expiresAt, 'dd/MM/yyyy')}` : 'será vitalício'}</span>.</li>
                                             </>
                                         )}
@@ -332,6 +290,11 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
 
     return (
         <div className="h-full">
+            {isParsing && (
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            )}
             {renderStep()}
             <DialogFooter className="mt-4 pt-4 border-t">
                 {step > 1 && step < 4 && <Button variant="outline" onClick={() => setStep(step - 1)}>Voltar</Button>}

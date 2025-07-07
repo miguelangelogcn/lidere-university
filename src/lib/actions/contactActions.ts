@@ -1,9 +1,10 @@
 'use server';
 
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, Timestamp, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, Timestamp, query, where, getDocs } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { revalidatePath } from 'next/cache';
+import { getFormations } from '@/services/formationService';
 
 async function generateUniquePassword() {
     return Math.random().toString(36).slice(-10);
@@ -12,10 +13,15 @@ async function generateUniquePassword() {
 export async function importContacts(
     records: any[],
     mappings: Record<string, string>,
-    studentConfig: { grantAccess: boolean; formationIds: string[]; expiresAt: string | null }
+    studentConfig: { grantAccess: boolean; expiresAt: string | null }
 ): Promise<{ success: number; failed: number; errors: string[] }> {
     const results = { success: 0, failed: 0, errors: [] as string[] };
     const contactsCollection = collection(db, 'contacts');
+
+    const allFormations = await getFormations();
+    const formationNameMap = new Map(
+        allFormations.map(f => [f.title.toLowerCase(), f.id])
+    );
 
     for (const record of records) {
         const contactData: any = {};
@@ -33,7 +39,7 @@ export async function importContacts(
             if (record[mappings[key]]) {
                 if (key === 'tags') {
                     contactData[key] = record[mappings[key]].split(',').map((t: string) => t.trim());
-                } else if(key !== 'isStudent') {
+                } else if(key !== 'isStudent' && key !== 'formations') {
                     contactData[key] = record[mappings[key]];
                 }
             }
@@ -63,19 +69,30 @@ export async function importContacts(
                     const userCredential = await createUserWithEmailAndPassword(auth, contactEmail, password);
                     const user = userCredential.user;
 
-                    const accessWithTimestamps = studentConfig.formationIds.map(id => ({
-                        formationId: id,
-                        expiresAt: studentConfig.expiresAt ? Timestamp.fromDate(new Date(studentConfig.expiresAt)) : null,
-                    }));
+                    const formationNamesCSV = record[mappings['formations']] || '';
+                    const formationAccess: { formationId: string, expiresAt: Timestamp | null }[] = [];
+
+                    if (formationNamesCSV) {
+                        const formationNames = formationNamesCSV.split(',').map((name: string) => name.trim().toLowerCase());
+                        
+                        for (const name of formationNames) {
+                            const formationId = formationNameMap.get(name);
+                            if (formationId) {
+                                formationAccess.push({
+                                    formationId: formationId,
+                                    expiresAt: studentConfig.expiresAt ? Timestamp.fromDate(new Date(studentConfig.expiresAt)) : null,
+                                });
+                            } else {
+                                results.errors.push(`Aviso para ${contactEmail}: Formação '${name}' não encontrada e ignorada.`);
+                            }
+                        }
+                    }
 
                     await updateDoc(newContactRef, {
                         studentAccess: { userId: user.uid },
-                        formationAccess: accessWithTimestamps,
+                        formationAccess: formationAccess,
                     });
                 } catch (authError: any) {
-                    // This error is tricky. The contact was created, but auth failed.
-                    // For simplicity, we'll count it as a full failure.
-                    // A more robust solution might delete the created contact or flag it for review.
                      throw new Error(`Falha ao criar usuário de autenticação para ${contactEmail}: ${authError.code}`);
                 }
             }
