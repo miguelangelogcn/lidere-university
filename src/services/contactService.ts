@@ -22,6 +22,7 @@ function docToContact(doc: DocumentData): Contact {
             formationId: fa.formationId,
             expiresAt: fa.expiresAt?.toDate ? fa.expiresAt.toDate().toISOString() : null,
         })),
+        formationProgress: data.formationProgress || {},
     };
 }
 
@@ -40,7 +41,7 @@ export async function getContacts(): Promise<Contact[]> {
   }
 }
 
-export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess' | 'formationAccess'>): Promise<void> {
+export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess' | 'formationAccess' | 'formationProgress'>): Promise<void> {
     try {
         const contactsCollection = adminDb.collection('contacts');
         await contactsCollection.add(data);

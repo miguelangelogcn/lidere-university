@@ -13,6 +13,7 @@ export type Contact = {
   avatarUrl?: string | null;
   studentAccess?: { userId: string } | null;
   formationAccess?: FormationAccess[];
+  formationProgress?: { [formationId: string]: string[] }; // {[formationId]: [lessonId, ...]}
 };
 
 export type PipelineStage = {
@@ -55,7 +56,9 @@ export type AppUser = {
   avatarUrl: string | null;
   permissions: string[];
   roleId?: string | null;
+  contactId?: string | null;
   formationAccess?: FormationAccess[];
+  formationProgress?: { [formationId: string]: string[] };
 };
 
 export type Role = {

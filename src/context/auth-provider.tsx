@@ -10,9 +10,10 @@ import type { AppUser, Role, Contact, FormationAccess } from '@/lib/types';
 type AuthContextType = {
   user: AppUser | null;
   loading: boolean;
+  setUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
 };
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, setUser: () => {} });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -61,10 +62,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               avatarUrl: contactData.avatarUrl || null,
               permissions: ['/formacoes', '/ferramentas'], // Hardcoded student permissions
               roleId: null,
+              contactId: contactDoc.id,
               formationAccess: (contactData.formationAccess || []).map((access: any) => ({
                 formationId: access.formationId,
                 expiresAt: access.expiresAt?.toDate ? access.expiresAt.toDate().toISOString() : null,
               })),
+              formationProgress: contactData.formationProgress || {},
             };
             setUser(studentUser);
           } else {
@@ -84,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, setUser }}>
       {children}
     </AuthContext.Provider>
   );
