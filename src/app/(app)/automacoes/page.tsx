@@ -1,3 +1,5 @@
+'use client';
+
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyButton } from "@/components/copy-button";
@@ -5,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal, Workflow } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { WebhookTestForm } from "@/components/webhook-test-form";
 
 export default function AutomacoesPage() {
     const webhookUrl = process.env.NEXT_PUBLIC_BASE_URL 
@@ -16,7 +20,7 @@ export default function AutomacoesPage() {
     return (
         <>
             <MainHeader title="Automações e Integrações" />
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <main className="flex flex-1 flex-col gap-8 p-4 md:gap-8 md:p-8">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-4">
@@ -76,6 +80,11 @@ export default function AutomacoesPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Separator />
+                
+                <WebhookTestForm />
+
             </main>
         </>
     );
