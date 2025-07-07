@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { getFormationById } from "@/services/formationService";
 import { MainHeader } from "@/components/main-header";
 import { FormationViewer } from "@/components/formation-viewer";
@@ -9,7 +10,8 @@ import type { SerializableFormation } from '@/lib/types';
 import FormationDetailsLoading from './loading';
 import { AlertTriangle } from 'lucide-react';
 
-export default function FormationDetailsPage({ params }: { params: { id: string } }) {
+export default function FormationDetailsPage() {
+  const params = useParams<{ id: string }>();
   const { user } = useAuth();
   const [formation, setFormation] = useState<SerializableFormation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ export default function FormationDetailsPage({ params }: { params: { id: string 
 
   useEffect(() => {
     async function fetchAndCheckAccess() {
-      if (!user) return; // Wait for user data
+      if (!user || !params?.id) return; // Wait for user and params
 
       setLoading(true);
 
@@ -35,7 +37,7 @@ export default function FormationDetailsPage({ params }: { params: { id: string 
       setLoading(false);
     }
     fetchAndCheckAccess();
-  }, [user, params.id]);
+  }, [user, params?.id]);
 
   if (loading) {
     return <FormationDetailsLoading />;
