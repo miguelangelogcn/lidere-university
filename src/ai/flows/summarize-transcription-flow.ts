@@ -28,11 +28,11 @@ const prompt = ai.definePrompt({
   name: 'summarizeTranscriptionPrompt',
   input: {schema: SummarizeTranscriptionInputSchema},
   output: {schema: SummarizeTranscriptionOutputSchema},
-  prompt: `You are an expert in business mentorship. Your task is to summarize the following meeting transcription.
+  prompt: `Você é um especialista em mentoria de negócios. Sua tarefa é resumir a seguinte transcrição de reunião EM PORTUGUÊS (BRASIL).
 
-  Focus on the key discussion points, decisions made, and any action items assigned to either the mentor or the mentee. The summary should be clear, concise, and easy to understand.
+  Concentre-se nos principais pontos de discussão, decisões tomadas e quaisquer itens de ação atribuídos ao mentor ou ao mentorado. O resumo deve ser claro, conciso e fácil de entender.
 
-  Transcription to summarize:
+  Transcrição para resumir:
   {{{transcription}}}
   `,
 });
