@@ -138,20 +138,29 @@ export function AddContactForm({ onSuccess }: AddContactFormProps) {
                             .map((tag) => (
                               <Badge variant="secondary" key={tag.id} className="flex items-center gap-1.5">
                                 {tag.name}
-                                <button
-                                  type="button"
+                                <span
+                                  role="button"
+                                  tabIndex={0}
                                   aria-label={`Remover ${tag.name}`}
-                                  className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                                   onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
                                       const newValue = (field.value || []).filter((t) => t !== tag.name);
                                       form.setValue("tags", newValue);
                                   }}
+                                  onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          const newValue = (field.value || []).filter((t) => t !== tag.name);
+                                          form.setValue("tags", newValue);
+                                      }
+                                  }}
+                                  className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                 >
                                   <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                </button>
+                                </span>
                               </Badge>
                             ))
                         ) : (

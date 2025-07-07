@@ -233,20 +233,29 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                                                     .map((f) => (
                                                         <Badge variant="secondary" key={f.id} className="flex items-center gap-1.5">
                                                             {f.title}
-                                                            <button
-                                                                type="button"
+                                                            <span
+                                                                role="button"
+                                                                tabIndex={0}
                                                                 aria-label={`Remover ${f.title}`}
-                                                                className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
                                                                 onClick={(e) => {
                                                                     e.preventDefault();
                                                                     e.stopPropagation();
                                                                     const newValue = (field.value || []).filter((id) => id !== f.id);
                                                                     form.setValue("formationIds", newValue, { shouldDirty: true });
                                                                 }}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter" || e.key === " ") {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        const newValue = (field.value || []).filter((id) => id !== f.id);
+                                                                        form.setValue("formationIds", newValue, { shouldDirty: true });
+                                                                    }
+                                                                }}
+                                                                className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                                             >
                                                                 <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                                            </button>
+                                                            </span>
                                                         </Badge>
                                                     ))
                                             ) : (
