@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, auth } from '@/lib/firebase';
@@ -17,7 +18,7 @@ async function generateUniquePassword() {
 export async function importContacts(
     records: any[],
     mappings: Record<string, string>,
-    studentConfig: { grantAccess: boolean; expiresAt: string | null } // expiresAt is a fallback, not used if product has rules
+    studentConfig: { grantAccess: boolean; }
 ): Promise<{ success: number; failed: number; errors: string[] }> {
     const results = { success: 0, failed: 0, errors: [] as string[] };
     const contactsCollection = collection(db, 'contacts');
