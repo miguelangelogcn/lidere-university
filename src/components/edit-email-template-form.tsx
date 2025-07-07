@@ -62,7 +62,7 @@ export function EditEmailTemplateForm({ template, onSuccess }: EditEmailTemplate
         )}/>
          <FormField control={form.control} name="body" render={({ field }) => (
             <FormItem><FormLabel>Corpo do Email (HTML)</FormLabel><FormControl><Textarea {...field} rows={10} /></FormControl>
-            <FormDescription>Variáveis disponíveis: {{name}}, {{email}}, {{password}}, {{loginUrl}}.</FormDescription><FormMessage /></FormItem>
+            <FormDescription>{"Variáveis disponíveis: {{name}}, {{email}}, {{password}}, {{loginUrl}}."}</FormDescription><FormMessage /></FormItem>
         )}/>
 
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground mt-4" disabled={form.formState.isSubmitting}>
