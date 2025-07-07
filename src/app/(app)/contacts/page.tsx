@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Upload } from "lucide-react";
 import type { Contact } from "@/lib/types";
 import { getContacts, deleteContact } from "@/services/contactService";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AddContactForm } from "@/components/add-contact-form";
 import { EditContactForm } from "@/components/edit-contact-form";
+import { ImportContactsFlow } from "@/components/import-contacts-flow";
 
 function getInitials(name: string) {
     if (!name) return 'C';
@@ -60,6 +61,7 @@ export default function ContactsPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const { toast } = useToast();
 
@@ -82,6 +84,7 @@ export default function ContactsPage() {
     const handleSuccess = () => {
         setIsAddDialogOpen(false);
         setIsEditDialogOpen(false);
+        setIsImportDialogOpen(false);
         setSelectedContact(null);
         fetchContacts();
         toast({ title: "Sucesso!", description: "Operação realizada com sucesso." });
@@ -108,6 +111,20 @@ export default function ContactsPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center">
             <div className="ml-auto flex items-center gap-2">
+                <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                            <Upload className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                Importar Contatos
+                            </span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl">
+                        <ImportContactsFlow onSuccess={handleSuccess} />
+                    </DialogContent>
+                </Dialog>
+
                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
