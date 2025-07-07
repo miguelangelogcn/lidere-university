@@ -232,7 +232,7 @@ export function EditContactForm({ contact, onSuccess }: EditContactFormProps) {
                 <FormItem>
                 <FormLabel>Idade (Opcional)</FormLabel>
                 <FormControl>
-                    <Input type="number" placeholder="Idade" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || '')} />
+                    <Input type="number" placeholder="Idade" {...field} value={field.value ?? ''} onChange={e => { const num = parseInt(e.target.value, 10); field.onChange(isNaN(num) ? undefined : num); }} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>

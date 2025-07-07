@@ -311,7 +311,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>Validade do Acesso ao Conteúdo (dias)</FormLabel>
-                        <FormControl><Input type="number" placeholder="Ex: 365" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                        <FormControl><Input type="number" placeholder="Ex: 365" {...field} value={field.value ?? ''} onChange={e => { const num = parseInt(e.target.value, 10); field.onChange(isNaN(num) ? null : num); }} /></FormControl>
                         <FormDescription>Deixe em branco para acesso vitalício.</FormDescription>
                         <FormMessage />
                     </FormItem>
@@ -339,7 +339,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Validade do Acompanhamento (dias)</FormLabel>
-                            <FormControl><Input type="number" placeholder="Ex: 90" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                            <FormControl><Input type="number" placeholder="Ex: 90" {...field} value={field.value ?? ''} onChange={e => { const num = parseInt(e.target.value, 10); field.onChange(isNaN(num) ? null : num); }} /></FormControl>
                             <FormDescription>Por quantos dias o cliente terá acompanhamento após a compra.</FormDescription>
                             <FormMessage />
                         </FormItem>
