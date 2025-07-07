@@ -19,6 +19,9 @@ const fontHeadline = Poppins({
 export const metadata: Metadata = {
   title: 'Lidere University',
   description: 'Sua plataforma de gestão para a Lidere University.',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
