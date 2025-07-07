@@ -129,15 +129,6 @@ export function FormationViewer({ formation }: { formation: SerializableFormatio
               </div>
             )}
 
-            {selectedLesson.textContent && (
-              <div className="prose prose-lg mt-8 max-w-none text-foreground">
-                 <h2 className="mb-4 flex items-center gap-3 text-2xl font-semibold border-b pb-2">
-                    <BookOpen size={24} />  Conteúdo da Aula
-                  </h2>
-                <div className="text-muted-foreground whitespace-pre-wrap">{selectedLesson.textContent}</div>
-              </div>
-            )}
-
             {selectedLesson.attachments && selectedLesson.attachments.length > 0 && (
               <div className="mt-8">
                  <h2 className="mb-4 flex items-center gap-3 text-2xl font-semibold border-b pb-2">
@@ -153,6 +144,15 @@ export function FormationViewer({ formation }: { formation: SerializableFormatio
                     </Button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {selectedLesson.textContent && (
+              <div className="prose prose-lg mt-8 max-w-none text-foreground">
+                 <h2 className="mb-4 flex items-center gap-3 text-2xl font-semibold border-b pb-2">
+                    <BookOpen size={24} />  Conteúdo da Aula
+                  </h2>
+                <div className="text-muted-foreground whitespace-pre-wrap">{selectedLesson.textContent}</div>
               </div>
             )}
             
