@@ -4,7 +4,6 @@ import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: apiKey,
@@ -14,11 +13,6 @@ const firebaseConfig: FirebaseOptions = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
-
-// Only add measurementId if it exists, to make it optional
-if (measurementId) {
-    firebaseConfig.measurementId = measurementId;
-}
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
