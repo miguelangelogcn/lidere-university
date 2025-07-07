@@ -15,7 +15,7 @@ import { createContact } from '@/services/contactService';
 import { getTags } from '@/services/tagService';
 import type { Tag } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, XCircle } from 'lucide-react';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.'),
@@ -120,28 +120,44 @@ export function AddContactForm({ onSuccess }: AddContactFormProps) {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Tags</FormLabel>
-              <Popover>
+               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant="outline"
                       role="combobox"
                       className={cn(
-                        "w-full justify-between h-auto min-h-10",
+                        "w-full justify-start h-auto min-h-10 px-3 py-2 text-left font-normal",
                         !field.value?.length && "text-muted-foreground"
                       )}
                     >
-                      <div className="flex gap-1 flex-wrap">
-                        {allTags
-                          .filter(tag => field.value?.includes(tag.name))
-                          .map((tag) => (
-                            <Badge variant="secondary" key={tag.id} className="mr-1">
-                              {tag.name}
-                            </Badge>
-                          ))}
-                        {!field.value?.length && "Selecione as tags"}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {field.value && field.value.length > 0 ? (
+                          allTags
+                            .filter(tag => field.value?.includes(tag.name))
+                            .map((tag) => (
+                              <Badge variant="secondary" key={tag.id} className="flex items-center gap-1.5">
+                                {tag.name}
+                                <button
+                                  type="button"
+                                  aria-label={`Remover ${tag.name}`}
+                                  className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const newValue = (field.value || []).filter((t) => t !== tag.name);
+                                      form.setValue("tags", newValue);
+                                  }}
+                                >
+                                  <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                </button>
+                              </Badge>
+                            ))
+                        ) : (
+                          "Selecione as tags"
+                        )}
                       </div>
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>

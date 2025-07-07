@@ -15,7 +15,7 @@ import { getFormations } from '@/services/formationService';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { PlusCircle, Trash2, Loader2, Upload, X, Check, ChevronsUpDown } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Upload, X, Check, XCircle } from 'lucide-react';
 import type { Product, SerializableFormation } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -225,28 +225,44 @@ export function EditProductForm({ product, onSuccess }: EditProductFormProps) {
                 render={({ field }) => (
                      <FormItem className="flex flex-col">
                         <FormLabel>Formações Vinculadas (Conteúdo)</FormLabel>
-                        <Popover>
+                         <Popover>
                             <PopoverTrigger asChild>
                                 <FormControl>
                                     <Button
                                         variant="outline"
                                         role="combobox"
                                         className={cn(
-                                            "w-full justify-between h-auto min-h-10",
+                                            "w-full justify-start h-auto min-h-10 px-3 py-2 text-left font-normal",
                                             !field.value?.length && "text-muted-foreground"
                                         )}
                                     >
-                                        <div className="flex gap-1 flex-wrap">
-                                            {formations
-                                                .filter(f => field.value?.includes(f.id))
-                                                .map((f) => (
-                                                    <Badge variant="secondary" key={f.id} className="mr-1">
-                                                        {f.title}
-                                                    </Badge>
-                                                ))}
-                                            {(!field.value || field.value.length === 0) && "Selecione as formações"}
+                                        <div className="flex gap-1.5 flex-wrap">
+                                            {field.value && field.value.length > 0 ? (
+                                                formations
+                                                    .filter(f => field.value?.includes(f.id))
+                                                    .map((f) => (
+                                                        <Badge variant="secondary" key={f.id} className="flex items-center gap-1.5">
+                                                            {f.title}
+                                                            <button
+                                                                type="button"
+                                                                aria-label={`Remover ${f.title}`}
+                                                                className="rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    const newValue = (field.value || []).filter((id) => id !== f.id);
+                                                                    form.setValue("formationIds", newValue, { shouldDirty: true });
+                                                                }}
+                                                            >
+                                                                <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                                            </button>
+                                                        </Badge>
+                                                    ))
+                                            ) : (
+                                                "Selecione as formações"
+                                            )}
                                         </div>
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </FormControl>
                             </PopoverTrigger>
