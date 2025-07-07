@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import DynamicAuthProvider from '@/components/dynamic-auth-provider';
+import { EnvCheckWrapper } from '@/components/env-check-wrapper';
 
 const fontBody = Inter({
   subsets: ['latin'],
@@ -32,10 +33,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn('font-body antialiased', fontBody.variable, fontHeadline.variable)}>
-        <DynamicAuthProvider>
-          {children}
-          <Toaster />
-        </DynamicAuthProvider>
+        <EnvCheckWrapper>
+          <DynamicAuthProvider>
+            {children}
+            <Toaster />
+          </DynamicAuthProvider>
+        </EnvCheckWrapper>
       </body>
     </html>
   );

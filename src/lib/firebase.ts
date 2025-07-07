@@ -6,7 +6,7 @@ import { getAuth } from "firebase/auth";
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 if (!apiKey || apiKey.startsWith('<YOUR_')) {
-    throw new Error('A chave de API do Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) não está configurada corretamente no seu arquivo .env. Por favor, verifique o valor e reinicie o servidor de desenvolvimento.');
+    console.error('A chave de API do Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) não está configurada corretamente no seu arquivo .env. Por favor, verifique o valor e reinicie o servidor de desenvolvimento.');
 }
 
 const firebaseConfig: FirebaseOptions = {
