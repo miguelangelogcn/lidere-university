@@ -1,8 +1,8 @@
 'use server';
 
-import { db } from '@/lib/firebase';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import type { Contact } from '@/lib/types';
-import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import type { DocumentData } from 'firebase-admin/firestore';
 
 function docToContact(doc: DocumentData): Contact {
     const data = doc.data();
@@ -18,13 +18,17 @@ function docToContact(doc: DocumentData): Contact {
         gender: data.gender || null,
         avatarUrl: data.avatarUrl || null,
         studentAccess: data.studentAccess || null,
+        formationAccess: (data.formationAccess || []).map((fa: any) => ({
+            formationId: fa.formationId,
+            expiresAt: fa.expiresAt?.toDate ? fa.expiresAt.toDate().toISOString() : null,
+        })),
     };
 }
 
 export async function getContacts(): Promise<Contact[]> {
   try {
-    const contactsCollection = collection(db, 'contacts');
-    const contactSnapshot = await getDocs(contactsCollection);
+    const contactsCollection = adminDb.collection('contacts');
+    const contactSnapshot = await contactsCollection.get();
     if (contactSnapshot.empty) {
         return [];
     }
@@ -36,10 +40,10 @@ export async function getContacts(): Promise<Contact[]> {
   }
 }
 
-export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess'>): Promise<void> {
+export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess' | 'formationAccess'>): Promise<void> {
     try {
-        const contactsCollection = collection(db, 'contacts');
-        await addDoc(contactsCollection, data);
+        const contactsCollection = adminDb.collection('contacts');
+        await contactsCollection.add(data);
     } catch (error) {
         console.error("Error creating contact: ", error);
         throw new Error("Falha ao criar contato.");
@@ -49,8 +53,8 @@ export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'st
 
 export async function updateContact(contactId: string, data: Partial<Omit<Contact, 'id'>>): Promise<void> {
     try {
-        const contactDocRef = doc(db, 'contacts', contactId);
-        await updateDoc(contactDocRef, data);
+        const contactDocRef = adminDb.collection('contacts').doc(contactId);
+        await contactDocRef.update(data);
     } catch (error) {
         console.error("Error updating contact: ", error);
         throw new Error("Falha ao atualizar contato.");
@@ -59,10 +63,32 @@ export async function updateContact(contactId: string, data: Partial<Omit<Contac
 
 export async function deleteContact(contactId: string): Promise<void> {
     try {
-        const contactDocRef = doc(db, 'contacts', contactId);
-        await deleteDoc(contactDocRef);
+        const contactDocRef = adminDb.collection('contacts').doc(contactId);
+        const docSnap = await contactDocRef.get();
+        
+        if (docSnap.exists) {
+            const contactData = docSnap.data();
+            // If the contact is also a student (has an auth account), delete it.
+            if (contactData?.studentAccess?.userId) {
+                try {
+                    await adminAuth.deleteUser(contactData.studentAccess.userId);
+                } catch (authError: any) {
+                    if (authError.code !== 'auth/user-not-found') {
+                         console.error("Error deleting auth user during contact deletion:", authError);
+                         // Fail the whole operation if we can't delete the auth user, to avoid orphans.
+                         throw new Error("Falha ao excluir o usuário de autenticação associado.");
+                    }
+                    // If user not found in auth, we can just proceed to delete from Firestore.
+                    console.warn(`Auth user ${contactData.studentAccess.userId} not found, proceeding with Firestore deletion.`);
+                }
+            }
+        }
+        
+        // Delete the contact document from Firestore
+        await contactDocRef.delete();
     } catch (error) {
         console.error("Error deleting contact: ", error);
+        if (error instanceof Error) throw error;
         throw new Error("Falha ao excluir contato.");
     }
 }

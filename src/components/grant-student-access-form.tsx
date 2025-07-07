@@ -70,13 +70,8 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
 
 
   const onSubmit = async (data: AccessFormValues) => {
-    const formattedAccess = data.formationAccess.map(access => ({
-      formationId: access.formationId,
-      expiresAt: access.expiresAt ? access.expiresAt.toISOString() : null,
-    }));
-
     try {
-      await grantStudentAccess(contact, data.password, formattedAccess);
+      await grantStudentAccess(contact, data.password, data.formationAccess);
       toast({ title: "Sucesso!", description: `Acesso criado para ${contact.name}.` });
       onSuccess();
     } catch (err: any) {

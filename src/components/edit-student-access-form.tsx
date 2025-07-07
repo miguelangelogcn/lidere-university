@@ -70,12 +70,8 @@ export function EditStudentAccessForm({ contact, onSuccess }: EditStudentAccessF
 
 
   const onSubmit = async (data: AccessFormValues) => {
-    const formattedData = data.formationAccess.map(access => ({
-      formationId: access.formationId,
-      expiresAt: access.expiresAt ? access.expiresAt.toISOString() : null,
-    }));
     try {
-      await updateStudentAccess(contact.id, formattedData);
+      await updateStudentAccess(contact.id, data.formationAccess);
       toast({ title: "Sucesso!", description: `Acesso de ${contact.name} atualizado.` });
       onSuccess();
     } catch (err: any) {
