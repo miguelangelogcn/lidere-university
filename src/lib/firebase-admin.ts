@@ -1,5 +1,3 @@
-'use server';
-
 import admin from 'firebase-admin';
 import { getApps } from 'firebase-admin/app';
 import serviceAccount from '../../lidere-university-firebase-adminsdk-fbsvc.json';
