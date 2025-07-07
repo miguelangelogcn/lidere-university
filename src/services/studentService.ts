@@ -1,10 +1,97 @@
+
 'use server';
 
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import type { Contact, FormationAccess } from '@/lib/types';
+import type { Contact, FormationAccess, Product } from '@/lib/types';
 import { getEmailTemplateBySlug } from './emailTemplateService';
 import { sendEmail } from './emailService';
+
+async function generateUniquePassword() {
+    return Math.random().toString(36).slice(-10);
+}
+
+export async function grantStudentAccessFromPurchase(
+    contact: Contact,
+    product: Product
+): Promise<{ success: boolean; message: string, userId?: string }> {
+     if (!contact.email) {
+        return { success: false, message: 'O contato não possui um email para criar o acesso.' };
+    }
+
+    try {
+        const password = await generateUniquePassword();
+        const userRecord = await adminAuth.createUser({
+            email: contact.email,
+            password: password,
+            displayName: contact.name,
+            emailVerified: true,
+        });
+
+        const formationAccess: any[] = (contact.formationAccess || []).map(fa => ({
+            ...fa,
+            expiresAt: fa.expiresAt ? Timestamp.fromDate(new Date(fa.expiresAt)) : null,
+        }));
+        const addedFormationIds = new Set<string>((contact.formationAccess || []).map(fa => fa.formationId));
+        
+        if(product.formationIds) {
+            for (const formationId of product.formationIds) {
+                if (!addedFormationIds.has(formationId)) {
+                    let expiresAt: Date | null = null;
+                    if (product.contentAccessDays && product.contentAccessDays > 0) {
+                        expiresAt = new Date();
+                        expiresAt.setDate(expiresAt.getDate() + product.contentAccessDays);
+                    }
+                    formationAccess.push({
+                        formationId: formationId,
+                        expiresAt: expiresAt ? Timestamp.fromDate(expiresAt) : null,
+                    });
+                    addedFormationIds.add(formationId);
+                }
+            }
+        }
+
+        const contactDocRef = adminDb.collection('contacts').doc(contact.id);
+        await contactDocRef.update({
+            studentAccess: { userId: userRecord.uid },
+            formationAccess: formationAccess,
+        });
+        
+        try {
+            const template = await getEmailTemplateBySlug('welcome-email');
+            if (template) {
+                let body = template.body;
+                let subject = template.subject;
+                const replacements = {
+                    '{{name}}': contact.name,
+                    '{{email}}': contact.email,
+                    '{{password}}': password,
+                    '{{loginUrl}}': 'https://vendas-ageis.firebaseapp.com/login' // This should be an env variable
+                };
+                for (const [key, value] of Object.entries(replacements)) {
+                    if(value) {
+                            body = body.replace(new RegExp(key, 'g'), value);
+                            subject = subject.replace(new RegExp(key, 'g'), value);
+                    }
+                }
+                await sendEmail({ to: contact.email, subject: subject, htmlBody: body });
+                return { success: true, message: 'Acesso de aluno criado e email de boas-vindas enviado.', userId: userRecord.uid };
+            } else {
+                console.warn("Welcome email template ('welcome-email') not found. Skipping email.");
+                return { success: true, message: "Acesso criado, mas o template 'welcome-email' não foi encontrado.", userId: userRecord.uid };
+            }
+        } catch (emailError: any) {
+            console.error(`Falha ao enviar email de boas-vindas para ${contact.email}:`, emailError);
+            return { success: true, message: `Acesso criado, mas o email falhou. Erro: ${emailError.message}`, userId: userRecord.uid };
+        }
+    } catch (error: any) {
+        console.error("Error granting student access from purchase:", error);
+        if (error.code === 'auth/email-already-exists') {
+            return { success: false, message: 'Este email já está em uso por outro usuário.' };
+        }
+        return { success: false, message: 'Falha ao conceder acesso de aluno.' };
+    }
+}
 
 
 export async function grantStudentAccess(

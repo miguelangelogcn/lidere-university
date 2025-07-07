@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
 import type { Product, OnboardingStep } from '@/lib/types';
-import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch, getDoc } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch, getDoc, query, where, limit } from 'firebase/firestore';
 
 function docToProduct(doc: DocumentData): Product {
     const data = doc.data();
@@ -48,6 +47,21 @@ export async function getProductById(id: string): Promise<Product | null> {
     } catch (error) {
         console.error("Error fetching product by id: ", error);
         return null;
+    }
+}
+
+export async function getProductByName(name: string): Promise<Product | null> {
+    try {
+        const productsCollection = collection(db, 'products');
+        const q = query(productsCollection, where('name', '==', name), limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) {
+            return null;
+        }
+        return docToProduct(snapshot.docs[0]);
+    } catch (error) {
+        console.error("Error fetching product by name: ", error);
+        throw new Error("Falha ao buscar produto por nome.");
     }
 }
 

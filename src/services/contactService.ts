@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
@@ -41,10 +42,26 @@ export async function getContacts(): Promise<Contact[]> {
   }
 }
 
-export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess' | 'formationAccess' | 'formationProgress'>): Promise<void> {
+export async function getContactByEmail(email: string): Promise<Contact | null> {
     try {
         const contactsCollection = adminDb.collection('contacts');
-        await contactsCollection.add(data);
+        const q = contactsCollection.where('email', '==', email).limit(1);
+        const snapshot = await q.get();
+        if (snapshot.empty) {
+            return null;
+        }
+        return docToContact(snapshot.docs[0]);
+    } catch (error) {
+        console.error("Error fetching contact by email: ", error);
+        throw new Error("Falha ao buscar contato por email.");
+    }
+}
+
+export async function createContact(data: Omit<Contact, 'id' | 'avatarUrl' | 'studentAccess' | 'formationAccess' | 'formationProgress'>): Promise<string> {
+    try {
+        const contactsCollection = adminDb.collection('contacts');
+        const docRef = await contactsCollection.add(data);
+        return docRef.id;
     } catch (error) {
         console.error("Error creating contact: ", error);
         throw new Error("Falha ao criar contato.");
