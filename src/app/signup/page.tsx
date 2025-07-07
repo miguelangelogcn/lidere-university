@@ -53,7 +53,7 @@ export default function SignupPage() {
           </div>
           <CardTitle className="text-2xl text-center font-headline">Adicionar Usuário</CardTitle>
           <CardDescription className="text-center">
-            Crie uma nova conta de acesso à plataforma
+            Crie uma nova conta de acesso à plataforma Lidere University
           </CardDescription>
         </CardHeader>
         <CardContent>

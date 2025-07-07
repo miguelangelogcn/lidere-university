@@ -47,7 +47,7 @@ function SidebarNav() {
         <SidebarHeader>
             <Link href="/inicio" className="flex items-center gap-2 font-semibold font-headline">
                 <Logo className="h-6 w-6 text-primary" />
-                <span className="group-data-[collapsible=icon]:hidden">Vendas Ágeis</span>
+                <span className="group-data-[collapsible=icon]:hidden">Lidere University</span>
             </Link>
         </SidebarHeader>
         <SidebarContent>
