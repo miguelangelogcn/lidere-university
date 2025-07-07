@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LessonComments } from './lesson-comments';
+import { getEmbedUrl } from '@/lib/utils';
 
 // Combined type for flattened lessons
 type EnrichedLesson = SerializableLesson & {
@@ -118,7 +119,7 @@ export function FormationViewer({ formation }: { formation: SerializableFormatio
             {selectedLesson.videoUrl && (
               <div className="aspect-video overflow-hidden rounded-lg border shadow-lg">
                 <iframe
-                  src={selectedLesson.videoUrl}
+                  src={getEmbedUrl(selectedLesson.videoUrl)}
                   title={selectedLesson.title}
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
