@@ -218,3 +218,19 @@ export type EmailTemplate = {
     subject: string;
     body: string; // HTML body with placeholders like {{name}}
 };
+
+export type WebhookLog = {
+    id: string;
+    payload: any;
+    headers: any;
+    result: {
+        success: boolean;
+        message: string;
+        [key: string]: any;
+    };
+    createdAt: any; // Firestore Timestamp
+}
+
+export type SerializableWebhookLog = Omit<WebhookLog, 'createdAt'> & {
+    createdAt: string;
+}
