@@ -1,21 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DeliveryKanbanBoard } from "@/components/delivery-kanban-board";
 import { MainHeader } from "@/components/main-header";
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Settings } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { AddDeliveryForm } from '@/components/add-delivery-form';
+import { ManageOnboardings } from '@/components/manage-onboardings';
+import { getProducts } from '@/services/productService';
+import type { Product } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function OnboardingPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-    // We need a way to trigger a refresh on the kanban board
+    const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loadingProducts, setLoadingProducts] = useState(true);
     const [refreshKey, setRefreshKey] = useState(0);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        async function fetchProducts() {
+            setLoadingProducts(true);
+            try {
+                const productList = await getProducts();
+                setProducts(productList);
+            } catch (error) {
+                toast({ variant: "destructive", title: "Erro!", description: "Falha ao carregar produtos para gerenciamento." });
+            } finally {
+                setLoadingProducts(false);
+            }
+        }
+        if (isManageDialogOpen) {
+            fetchProducts();
+        }
+    }, [isManageDialogOpen, toast]);
 
     const handleSuccess = () => {
         setIsAddDialogOpen(false);
-        setRefreshKey(prev => prev + 1); // Increment key to trigger re-fetch in kanban board
+        setIsManageDialogOpen(false);
+        setRefreshKey(prev => prev + 1);
     }
 
     return (
@@ -38,6 +64,24 @@ export default function OnboardingPage() {
                           </DialogDescription>
                         </DialogHeader>
                         <AddDeliveryForm onSuccess={handleSuccess} />
+                    </DialogContent>
+                </Dialog>
+                
+                <Dialog open={isManageDialogOpen} onOpenChange={setIsManageDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <Settings className="h-4 w-4 mr-2" />
+                            Gerenciar Onboardings
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl p-0">
+                       {loadingProducts ? (
+                         <div className="flex items-center justify-center p-6 h-48">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                         </div>
+                       ) : (
+                         <ManageOnboardings products={products} onSuccess={handleSuccess} />
+                       )}
                     </DialogContent>
                 </Dialog>
             </MainHeader>
