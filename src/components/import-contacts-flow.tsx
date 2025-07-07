@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -33,6 +32,7 @@ const OPTIONAL_FIELDS = [
     { id: 'city', label: 'Cidade' },
     { id: 'isStudent', label: 'É Aluno (true/false)' },
     { id: 'products', label: 'Produtos (nomes por vírgula)' },
+    { id: 'entryDate', label: 'Data de Entrada (AAAA-MM-DD)' },
 ];
 
 export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
@@ -90,7 +90,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
     };
     
     const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city,products\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo,\"Produto A,Produto B\"";
+        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city,products,entryDate\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo,\"Produto A,Produto B\",2024-01-15";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -218,7 +218,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                             <>
                                                 <li>Contatos marcados como alunos com um email válido receberão acesso.</li>
                                                 <li>O acesso às formações será concedido com base na coluna 'Produtos' do seu arquivo.</li>
-                                                <li>A data de expiração do acesso será calculada com base nas regras de cada produto.</li>
+                                                <li>A data de expiração do acesso será calculada com base nas regras de cada produto, a partir da data de entrada ou da data de hoje.</li>
                                             </>
                                         )}
                                     </ul>

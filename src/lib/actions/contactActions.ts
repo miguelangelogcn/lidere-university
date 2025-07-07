@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, auth } from '@/lib/firebase';
@@ -17,7 +15,7 @@ async function generateUniquePassword() {
 export async function importContacts(
     records: any[],
     mappings: Record<string, string>,
-    studentConfig: { grantAccess: boolean; expiresAt: string | null } // Note: studentConfig.expiresAt is now a fallback.
+    studentConfig: { grantAccess: boolean; expiresAt: string | null } // expiresAt is a fallback, not used if product has rules
 ): Promise<{ success: number; failed: number; errors: string[] }> {
     const results = { success: 0, failed: 0, errors: [] as string[] };
     const contactsCollection = collection(db, 'contacts');
@@ -41,7 +39,7 @@ export async function importContacts(
             if (record[mappings[key]]) {
                 if (key === 'tags') {
                     contactData[key] = record[mappings[key]].split(',').map((t: string) => t.trim());
-                } else if(key !== 'isStudent' && key !== 'products') {
+                } else if(key !== 'isStudent' && key !== 'products' && key !== 'entryDate') {
                     contactData[key] = record[mappings[key]];
                 }
             }
@@ -72,6 +70,16 @@ export async function importContacts(
                     const formationAccess: any[] = [];
                     const addedFormationIds = new Set<string>();
 
+                    const entryDateStr = record[mappings['entryDate']];
+                    let baseDate = new Date(); // Default to today
+                    if (entryDateStr) {
+                         // Handles YYYY-MM-DD and other common formats, but accounts for timezone
+                        const parsedDate = new Date(entryDateStr + 'T00:00:00');
+                        if (!isNaN(parsedDate.getTime())) {
+                            baseDate = parsedDate;
+                        }
+                    }
+
                     if (productNamesCSV) {
                         const productNames = productNamesCSV.split(',').map((name: string) => name.trim().toLowerCase());
                         
@@ -82,7 +90,7 @@ export async function importContacts(
                                     if (!addedFormationIds.has(formationId)) {
                                         let expiresAt: Date | null = null;
                                         if (product.contentAccessDays && product.contentAccessDays > 0) {
-                                            expiresAt = new Date();
+                                            expiresAt = new Date(baseDate);
                                             expiresAt.setDate(expiresAt.getDate() + product.contentAccessDays);
                                         }
                                         
