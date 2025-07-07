@@ -16,7 +16,7 @@ async function generateUniquePassword() {
 export async function importContacts(
     records: any[],
     mappings: Record<string, string>,
-    studentConfig: { grantAccess: boolean; }
+    studentConfig: { grantAccess: boolean; sendWelcomeEmail: boolean; }
 ): Promise<{ success: number; failed: number; errors: string[] }> {
     if (!adminDb || !adminAuth) {
         throw new Error('Firebase Admin SDK não foi inicializado corretamente.');
@@ -75,36 +75,37 @@ export async function importContacts(
                         emailVerified: true
                     });
 
-                    // Send welcome email
-                    try {
-                        const template = await getEmailTemplateBySlug('welcome-email');
-                        if (template) {
-                            let body = template.body;
-                            let subject = template.subject;
-                            const replacements = {
-                                '{{name}}': contactData.name,
-                                '{{email}}': contactEmail,
-                                '{{password}}': password,
-                                '{{loginUrl}}': 'https://vendas-ageis.firebaseapp.com/login' //This should be an env variable
-                            };
-                            for (const [key, value] of Object.entries(replacements)) {
-                                 if(value) {
-                                     body = body.replace(new RegExp(key, 'g'), value);
-                                     subject = subject.replace(new RegExp(key, 'g'), value);
-                                 }
+                    if (studentConfig.sendWelcomeEmail) {
+                        try {
+                            const template = await getEmailTemplateBySlug('welcome-email');
+                            if (template) {
+                                let body = template.body;
+                                let subject = template.subject;
+                                const replacements = {
+                                    '{{name}}': contactData.name,
+                                    '{{email}}': contactEmail,
+                                    '{{password}}': password,
+                                    '{{loginUrl}}': 'https://vendas-ageis.firebaseapp.com/login' //This should be an env variable
+                                };
+                                for (const [key, value] of Object.entries(replacements)) {
+                                     if(value) {
+                                         body = body.replace(new RegExp(key, 'g'), value);
+                                         subject = subject.replace(new RegExp(key, 'g'), value);
+                                     }
+                                }
+                                await sendEmail({
+                                    to: contactEmail,
+                                    subject: subject,
+                                    htmlBody: body,
+                                });
+                            } else {
+                                console.warn("Welcome email template ('welcome-email') not found. Skipping email for imported user.");
+                                 results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas não foi encontrado.`);
                             }
-                            await sendEmail({
-                                to: contactEmail,
-                                subject: subject,
-                                htmlBody: body,
-                            });
-                        } else {
-                            console.warn("Welcome email template ('welcome-email') not found. Skipping email for imported user.");
-                             results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas não foi encontrado.`);
+                        } catch (emailError) {
+                            console.error(`Falha ao enviar email para ${contactEmail}:`, emailError);
+                            results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas falhou.`);
                         }
-                    } catch (emailError) {
-                        console.error(`Falha ao enviar email para ${contactEmail}:`, emailError);
-                        results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas falhou.`);
                     }
 
 

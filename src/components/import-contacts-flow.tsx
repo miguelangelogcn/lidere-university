@@ -40,7 +40,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
     const [file, setFile] = useState<File | null>(null);
     const [csvData, setCsvData] = useState<{ headers: string[]; rows: any[] }>({ headers: [], rows: [] });
     const [mappings, setMappings] = useState<Record<string, string>>({});
-    const [studentConfig, setStudentConfig] = useState({ grantAccess: false, expiresAt: null as Date | null });
+    const [studentConfig, setStudentConfig] = useState({ grantAccess: false, sendWelcomeEmail: true });
     const [isParsing, setIsParsing] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
@@ -112,7 +112,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
         setFile(null);
         setCsvData({ headers: [], rows: [] });
         setMappings({});
-        setStudentConfig({ grantAccess: false, expiresAt: null });
+        setStudentConfig({ grantAccess: false, sendWelcomeEmail: true });
         setImportResult(null);
     }
     
@@ -155,6 +155,18 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         <Label htmlFor="grant-access" className="font-normal cursor-pointer">
                                             Criar acesso de aluno para contatos com email e marcados como "É Aluno".
                                             <p className="text-xs text-muted-foreground">Uma senha aleatória será criada para cada novo aluno e o acesso aos cursos será definido pela coluna 'Produtos' do CSV.</p>
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox 
+                                            id="send-welcome-email" 
+                                            checked={studentConfig.sendWelcomeEmail} 
+                                            onCheckedChange={(checked) => setStudentConfig(prev => ({ ...prev, sendWelcomeEmail: !!checked }))}
+                                            disabled={!studentConfig.grantAccess}
+                                        />
+                                        <Label htmlFor="send-welcome-email" className={cn("font-normal cursor-pointer", !studentConfig.grantAccess && "text-muted-foreground")}>
+                                            Enviar email de boas-vindas para os novos alunos criados.
+                                            <p className="text-xs text-muted-foreground">Usa o modelo de email com o slug 'welcome-email'.</p>
                                         </Label>
                                     </div>
                                 </div>
@@ -217,6 +229,11 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         {studentConfig.grantAccess && (
                                             <>
                                                 <li>Contatos marcados como alunos com um email válido receberão acesso.</li>
+                                                {studentConfig.sendWelcomeEmail ? (
+                                                    <li>Um e-mail de boas-vindas com os dados de acesso será enviado.</li>
+                                                ) : (
+                                                    <li>O e-mail de boas-vindas <strong>não</strong> será enviado.</li>
+                                                )}
                                                 <li>O acesso às formações será concedido com base na coluna 'Produtos' do seu arquivo.</li>
                                                 <li>A data de expiração do acesso será calculada com base nas regras de cada produto, a partir da data de entrada ou da data de hoje.</li>
                                             </>
