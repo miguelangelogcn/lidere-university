@@ -74,14 +74,22 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
 
   const onSubmit = async (data: AccessFormValues) => {
     try {
-      await grantStudentAccess(contact, data.password, data.formationAccess, data.sendWelcomeEmail);
+      const result = await grantStudentAccess(contact, data.password, data.formationAccess, data.sendWelcomeEmail);
       toast({ title: "Sucesso!", description: `Acesso criado para ${contact.name}.` });
+      if (result.warning) {
+        toast({
+          variant: 'destructive',
+          title: "Aviso sobre o Email",
+          description: result.warning,
+          duration: 10000,
+        });
+      }
       onSuccess();
     } catch (err: any) {
       toast({ variant: "destructive", title: "Erro!", description: err.message });
     }
   };
-
+  
   const handleAddCourse = () => {
     if (newCourseId && !fields.some(field => field.formationId === newCourseId)) {
         append({ formationId: newCourseId, expiresAt: null });

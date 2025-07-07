@@ -12,7 +12,7 @@ export async function grantStudentAccess(
     password: string, 
     formationAccess: { formationId: string, expiresAt: Date | null }[],
     sendWelcomeEmail: boolean
-): Promise<void> {
+): Promise<{ success: boolean; warning?: string }> {
     if (!contact.email) {
         throw new Error('O contato não possui um email para criar o acesso.');
     }
@@ -36,7 +36,6 @@ export async function grantStudentAccess(
             formationAccess: accessWithTimestamps,
         });
 
-        // Send welcome email using a template
         if (sendWelcomeEmail) {
             try {
                 const template = await getEmailTemplateBySlug('welcome-email');
@@ -58,12 +57,15 @@ export async function grantStudentAccess(
                     await sendEmail({ to: contact.email, subject: subject, htmlBody: body });
                 } else {
                     console.warn("Welcome email template ('welcome-email') not found. Skipping email.");
+                    return { success: true, warning: "O acesso foi criado, mas o template 'welcome-email' não foi encontrado." };
                 }
-            } catch (emailError) {
+            } catch (emailError: any) {
                 console.error(`Falha ao enviar email de boas-vindas para ${contact.email}:`, emailError);
-                // Do not throw error, the account was created successfully.
+                return { success: true, warning: `O acesso foi criado, mas o email falhou. Verifique as configs de SMTP. Erro: ${emailError.message}` };
             }
         }
+
+        return { success: true };
 
     } catch (error: any) {
         console.error("Error granting student access:", error);

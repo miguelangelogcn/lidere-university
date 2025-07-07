@@ -13,9 +13,7 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
 
     if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !EMAIL_FROM) {
         console.error("Variáveis de ambiente SMTP não configuradas. O email não será enviado.");
-        // Em um ambiente de produção, você pode querer lançar um erro ou ter uma lógica de fallback.
-        // Por enquanto, apenas logamos o erro e retornamos para não quebrar a aplicação.
-        return;
+        throw new Error("A configuração de SMTP está incompleta no servidor.");
     }
 
     const transporter = nodemailer.createTransport({
@@ -40,7 +38,6 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
         console.log(`Email enviado com sucesso para ${payload.to}`);
     } catch (error) {
         console.error(`Erro ao enviar email para ${payload.to}:`, error);
-        // Em produção, você pode querer relançar o erro ou lidar com ele de forma mais específica
-        throw new Error("Falha ao enviar o email.");
+        throw new Error("Falha ao se conectar com o servidor de email. Verifique as credenciais SMTP.");
     }
 }
