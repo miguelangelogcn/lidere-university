@@ -5,11 +5,13 @@ import type { OnboardingProcess, OnboardingStep } from "@/lib/types";
 import { getOnboardingSteps } from "@/services/onboardingService";
 import { updateOnboardingProcess } from "@/services/deliveryService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { cn } from "@/lib/utils";
 
 type OnboardingKanbanModalProps = {
   onboardingProcess: OnboardingProcess | null;
@@ -40,7 +42,7 @@ export function OnboardingKanbanModal({ onboardingProcess, onOpenChange, onSucce
   }, [onboardingProcess]);
   
   const handleCheckChange = async (stepId: string) => {
-    if (!onboardingProcess) return;
+    if (!onboardingProcess || onboardingProcess.status !== 'doing') return;
 
     const newCheckedState = !checkedSteps[stepId];
     const newProgress = { ...checkedSteps, [stepId]: newCheckedState };
@@ -77,6 +79,19 @@ export function OnboardingKanbanModal({ onboardingProcess, onOpenChange, onSucce
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-hidden px-6 pb-6">
+                {onboardingProcess.status !== 'doing' && (
+                    <Alert className="mb-4">
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>
+                            {onboardingProcess.status === 'todo' && 'Onboarding não iniciado'}
+                            {onboardingProcess.status === 'done' && 'Onboarding concluído'}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {onboardingProcess.status === 'todo' && 'Mova este card para a coluna "Fazendo" para liberar as tarefas.'}
+                            {onboardingProcess.status === 'done' && 'Este onboarding já foi finalizado.'}
+                        </AlertDescription>
+                    </Alert>
+                )}
                 {loadingSteps ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -99,10 +114,15 @@ export function OnboardingKanbanModal({ onboardingProcess, onOpenChange, onSucce
                                                             checked={!!checkedSteps[step.id]}
                                                             onCheckedChange={() => handleCheckChange(step.id)}
                                                             className="h-5 w-5 mt-0.5 shrink-0"
+                                                            disabled={onboardingProcess.status !== 'doing'}
                                                         />
                                                         <label 
                                                             htmlFor={`step-${step.id}`}
-                                                            className={`cursor-pointer ${checkedSteps[step.id] ? 'line-through text-muted-foreground' : ''}`}
+                                                            className={cn(
+                                                                "cursor-pointer",
+                                                                onboardingProcess.status !== 'doing' && "cursor-not-allowed opacity-70",
+                                                                checkedSteps[step.id] && 'line-through text-muted-foreground'
+                                                            )}
                                                         >
                                                             {step.title}
                                                         </label>
