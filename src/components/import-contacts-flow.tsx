@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/cmdk';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from 'cmdk';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -203,7 +203,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !studentConfig.expiresAt && "text-muted-foreground")} disabled={!studentConfig.grantAccess}>
-                                                    <CalendarIcon className="mr-2" />
+                                                    <CalendarIcon className="mr-2"/>
                                                     {studentConfig.expiresAt ? format(studentConfig.expiresAt, "PPP", { locale: ptBR }) : <span>Acesso vitalício</span>}
                                                 </Button>
                                             </PopoverTrigger>
