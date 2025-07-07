@@ -3,8 +3,14 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
+const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+if (!apiKey || apiKey.startsWith('<YOUR_')) {
+    throw new Error('A chave de API do Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) não está configurada corretamente no seu arquivo .env. Por favor, verifique o valor e reinicie o servidor de desenvolvimento.');
+}
+
 const firebaseConfig: FirebaseOptions = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: apiKey,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
