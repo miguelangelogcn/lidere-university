@@ -1,7 +1,7 @@
-
 'use server';
 
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
+import { getApps } from 'firebase-admin/app';
 import serviceAccount from '../../lidere-university-firebase-adminsdk-fbsvc.json';
 
 // Check if the service account has the necessary properties.
@@ -19,7 +19,7 @@ const serviceAccountParams = {
     clientC509CertUrl: serviceAccount.client_x509_cert_url,
 };
 
-if (!admin.apps.length) {
+if (!getApps().length) {
   try {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccountParams),
