@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { initializeApp, getApps, type FirebaseOptions } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
