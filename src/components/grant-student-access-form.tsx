@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { grantStudentAccess } from '@/services/studentService';
@@ -19,6 +19,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
+import { Checkbox } from './ui/checkbox';
 
 const accessSchema = z.object({
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres.'),
@@ -26,6 +27,7 @@ const accessSchema = z.object({
     formationId: z.string(),
     expiresAt: z.date().nullable(),
   })).nonempty("É necessário conceder acesso a pelo menos um curso."),
+  sendWelcomeEmail: z.boolean().default(true),
 });
 
 type AccessFormValues = z.infer<typeof accessSchema>;
@@ -46,6 +48,7 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
     defaultValues: {
       password: '',
       formationAccess: [],
+      sendWelcomeEmail: true,
     },
   });
   
@@ -71,7 +74,7 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
 
   const onSubmit = async (data: AccessFormValues) => {
     try {
-      await grantStudentAccess(contact, data.password, data.formationAccess);
+      await grantStudentAccess(contact, data.password, data.formationAccess, data.sendWelcomeEmail);
       toast({ title: "Sucesso!", description: `Acesso criado para ${contact.name}.` });
       onSuccess();
     } catch (err: any) {
@@ -190,6 +193,29 @@ export function GrantStudentAccessForm({ contact, onSuccess }: GrantStudentAcces
                 </Button>
             </div>
         </div>
+
+        <FormField
+          control={form.control}
+          name="sendWelcomeEmail"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="cursor-pointer">
+                  Enviar email de boas-vindas
+                </FormLabel>
+                <FormDescription>
+                  Envia um email com a senha e o link de acesso para o aluno.
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Criando Acesso...</> : 'Conceder Acesso'}
