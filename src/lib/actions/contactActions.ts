@@ -1,12 +1,11 @@
 
 'use server';
 
-import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, Timestamp, query, where, getDocs } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
+import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { getProducts } from '@/services/productService';
-import type { Product, FormationAccess } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { generateWelcomeEmail } from '@/ai/flows/generate-welcome-email-flow';
 import { sendEmail } from '@/services/emailService';
 
@@ -20,8 +19,12 @@ export async function importContacts(
     mappings: Record<string, string>,
     studentConfig: { grantAccess: boolean; }
 ): Promise<{ success: number; failed: number; errors: string[] }> {
+    if (!adminDb || !adminAuth) {
+        throw new Error('Firebase Admin SDK não foi inicializado corretamente.');
+    }
+    
     const results = { success: 0, failed: 0, errors: [] as string[] };
-    const contactsCollection = collection(db, 'contacts');
+    const contactsCollection = adminDb.collection('contacts');
 
     const allProducts = await getProducts();
     const productNameMap = new Map<string, Product>(
@@ -52,8 +55,8 @@ export async function importContacts(
 
         try {
             if (isStudent && contactEmail) {
-                const q = query(contactsCollection, where('email', '==', contactEmail), where('studentAccess.userId', '!=', null));
-                const existingStudentSnap = await getDocs(q);
+                const q = contactsCollection.where('email', '==', contactEmail).where('studentAccess.userId', '!=', null);
+                const existingStudentSnap = await q.get();
                 if (!existingStudentSnap.empty) {
                      results.failed++;
                      results.errors.push(`Aluno com email ${contactEmail} já existe e foi ignorado.`);
@@ -61,13 +64,17 @@ export async function importContacts(
                 }
             }
 
-            const newContactRef = await addDoc(contactsCollection, contactData);
+            const newContactRef = await contactsCollection.add(contactData);
             
             if (isStudent && contactEmail) {
                 try {
                     const password = await generateUniquePassword();
-                    const userCredential = await createUserWithEmailAndPassword(auth, contactEmail, password);
-                    const user = userCredential.user;
+                    const userRecord = await adminAuth.createUser({
+                        email: contactEmail,
+                        password: password,
+                        displayName: contactData.name,
+                        emailVerified: true
+                    });
 
                     const productNamesCSV = record[mappings['products']] || '';
                     const formationAccess: any[] = [];
@@ -76,7 +83,6 @@ export async function importContacts(
                     const entryDateStr = record[mappings['entryDate']];
                     let baseDate = new Date(); // Default to today
                     if (entryDateStr) {
-                         // Handles YYYY-MM-DD and other common formats, but accounts for timezone
                         const parsedDate = new Date(entryDateStr + 'T00:00:00');
                         if (!isNaN(parsedDate.getTime())) {
                             baseDate = parsedDate;
@@ -110,12 +116,11 @@ export async function importContacts(
                         }
                     }
 
-                    await updateDoc(newContactRef, {
-                        studentAccess: { userId: user.uid },
+                    await newContactRef.update({
+                        studentAccess: { userId: userRecord.uid },
                         formationAccess: formationAccess,
                     });
 
-                    // Send welcome email
                     const loginUrl = process.env.NEXT_PUBLIC_BASE_URL
                       ? `${process.env.NEXT_PUBLIC_BASE_URL}/login`
                       : 'http://localhost:9002/login';
