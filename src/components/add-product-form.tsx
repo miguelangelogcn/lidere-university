@@ -210,14 +210,17 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>Formação Vinculada (Conteúdo)</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                        <Select
+                            onValueChange={(value) => field.onChange(value === '--none--' ? null : value)}
+                            value={field.value ?? '--none--'}
+                        >
                             <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Nenhuma formação vinculada" />
                                 </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="">Nenhuma formação vinculada</SelectItem>
+                                <SelectItem value="--none--">Nenhuma formação vinculada</SelectItem>
                                 {formations.map(f => (
                                     <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
                                 ))}
