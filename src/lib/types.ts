@@ -207,3 +207,11 @@ export type Formation = {
 export type SerializableFormation = Omit<Formation, 'modules'> & {
     modules: SerializableModule[];
 };
+
+export type EmailTemplate = {
+    id: string;
+    slug: string; // e.g., 'welcome-email', unique identifier
+    name: string;
+    subject: string;
+    body: string; // HTML body with placeholders like {{name}}
+};

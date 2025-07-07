@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { getProducts } from '@/services/productService';
 import type { Product } from '@/lib/types';
-import { generateWelcomeEmail } from '@/ai/flows/generate-welcome-email-flow';
+import { getEmailTemplateBySlug } from '@/services/emailTemplateService';
 import { sendEmail } from '@/services/emailService';
 
 
@@ -77,18 +77,31 @@ export async function importContacts(
 
                     // Send welcome email
                     try {
-                        const emailContent = await generateWelcomeEmail({
-                            name: contactData.name,
-                            email: contactEmail,
-                            password: password,
-                            loginUrl: 'https://seusite.com/login' // TODO: Replace with actual URL
-                        });
-
-                        await sendEmail({
-                            to: contactEmail,
-                            subject: emailContent.subject,
-                            htmlBody: emailContent.body,
-                        });
+                        const template = await getEmailTemplateBySlug('welcome-email');
+                        if (template) {
+                            let body = template.body;
+                            let subject = template.subject;
+                            const replacements = {
+                                '{{name}}': contactData.name,
+                                '{{email}}': contactEmail,
+                                '{{password}}': password,
+                                '{{loginUrl}}': 'https://vendas-ageis.firebaseapp.com/login' //This should be an env variable
+                            };
+                            for (const [key, value] of Object.entries(replacements)) {
+                                 if(value) {
+                                     body = body.replace(new RegExp(key, 'g'), value);
+                                     subject = subject.replace(new RegExp(key, 'g'), value);
+                                 }
+                            }
+                            await sendEmail({
+                                to: contactEmail,
+                                subject: subject,
+                                htmlBody: body,
+                            });
+                        } else {
+                            console.warn("Welcome email template ('welcome-email') not found. Skipping email for imported user.");
+                             results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas não foi encontrado.`);
+                        }
                     } catch (emailError) {
                         console.error(`Falha ao enviar email para ${contactEmail}:`, emailError);
                         results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas falhou.`);

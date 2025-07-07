@@ -13,6 +13,7 @@ import {
   Wrench,
   type LucideIcon,
   FileEdit,
+  Mail,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -78,6 +79,7 @@ export const appModules: Module[] = [
       { href: "/roles", icon: Briefcase, label: "Gerenciar Cargos" },
       { href: "/tags", icon: Tag, label: "Gerenciar Tags" },
       { href: "/products", icon: Package, label: "Gerenciar Produtos" },
+      { href: "/email-templates", icon: Mail, label: "Gerenciar Emails" },
     ],
   }
 ];

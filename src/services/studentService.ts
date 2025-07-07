@@ -3,6 +3,8 @@
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { Contact, FormationAccess } from '@/lib/types';
+import { getEmailTemplateBySlug } from './emailTemplateService';
+import { sendEmail } from './emailService';
 
 
 export async function grantStudentAccess(contact: Contact, password: string, formationAccess: { formationId: string, expiresAt: Date | null }[]): Promise<void> {
@@ -28,6 +30,34 @@ export async function grantStudentAccess(contact: Contact, password: string, for
             studentAccess: { userId: userRecord.uid },
             formationAccess: accessWithTimestamps,
         });
+
+        // Send welcome email using a template
+        try {
+            const template = await getEmailTemplateBySlug('welcome-email');
+            if (template) {
+                let body = template.body;
+                let subject = template.subject;
+                const replacements = {
+                    '{{name}}': contact.name,
+                    '{{email}}': contact.email,
+                    '{{password}}': password,
+                    '{{loginUrl}}': 'https://vendas-ageis.firebaseapp.com/login' // This should be an env variable
+                };
+                for (const [key, value] of Object.entries(replacements)) {
+                    if(value) {
+                         body = body.replace(new RegExp(key, 'g'), value);
+                         subject = subject.replace(new RegExp(key, 'g'), value);
+                    }
+                }
+                await sendEmail({ to: contact.email, subject: subject, htmlBody: body });
+            } else {
+                console.warn("Welcome email template ('welcome-email') not found. Skipping email.");
+            }
+        } catch (emailError) {
+            console.error(`Falha ao enviar email de boas-vindas para ${contact.email}:`, emailError);
+            // Do not throw error, the account was created successfully.
+        }
+
     } catch (error: any) {
         console.error("Error granting student access:", error);
         if (error.code === 'auth/email-already-exists') {
