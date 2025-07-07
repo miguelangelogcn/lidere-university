@@ -32,7 +32,7 @@ const prompt = ai.definePrompt({
   input: {schema: GenerateWelcomeEmailInputSchema},
   output: {schema: GenerateWelcomeEmailOutputSchema},
   prompt: `
-    Você é um assistente de onboarding para a Lidere University. Sua tarefa é criar um e-mail de boas-vindas para um novo aluno em PORTUGUÊS (BRASIL).
+    Você é um assistente de onboarding para a Lidere University. Sua tarefa é criar um e-mail de boas-vindas para um novo aluno EM PORTUGUÊS (BRASIL).
 
     O e-mail deve ser caloroso, profissional e informativo.
 

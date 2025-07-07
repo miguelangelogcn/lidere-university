@@ -5,6 +5,8 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { getProducts } from '@/services/productService';
 import type { Product } from '@/lib/types';
+import { generateWelcomeEmail } from '@/ai/flows/generate-welcome-email-flow';
+import { sendEmail } from '@/services/emailService';
 
 
 async function generateUniquePassword() {
@@ -72,6 +74,26 @@ export async function importContacts(
                         displayName: contactData.name,
                         emailVerified: true
                     });
+
+                    // Send welcome email
+                    try {
+                        const emailContent = await generateWelcomeEmail({
+                            name: contactData.name,
+                            email: contactEmail,
+                            password: password,
+                            loginUrl: 'https://seusite.com/login' // TODO: Replace with actual URL
+                        });
+
+                        await sendEmail({
+                            to: contactEmail,
+                            subject: emailContent.subject,
+                            htmlBody: emailContent.body,
+                        });
+                    } catch (emailError) {
+                        console.error(`Falha ao enviar email para ${contactEmail}:`, emailError);
+                        results.errors.push(`Aviso para ${contactEmail}: O contato foi criado, mas o email de boas-vindas falhou.`);
+                    }
+
 
                     const productNamesCSV = record[mappings['products']] || '';
                     const formationAccess: any[] = [];
