@@ -222,7 +222,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                                         variant="outline"
                                         role="combobox"
                                         className={cn(
-                                            "w-full justify-start h-auto min-h-10 px-3 py-2 text-left font-normal",
+                                            "w-full justify-between h-auto min-h-10 px-3 py-2 font-normal",
                                             !field.value?.length && "text-muted-foreground"
                                         )}
                                     >
@@ -262,6 +262,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                                                 "Selecione as formações"
                                             )}
                                         </div>
+                                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </FormControl>
                             </PopoverTrigger>

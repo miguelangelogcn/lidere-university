@@ -15,7 +15,7 @@ import { getFormations } from '@/services/formationService';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { PlusCircle, Trash2, Loader2, Upload, X, Check, XCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Upload, X, Check, XCircle, ChevronsUpDown } from 'lucide-react';
 import type { Product, SerializableFormation } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -232,7 +232,7 @@ export function EditProductForm({ product, onSuccess }: EditProductFormProps) {
                                         variant="outline"
                                         role="combobox"
                                         className={cn(
-                                            "w-full justify-start h-auto min-h-10 px-3 py-2 text-left font-normal",
+                                            "w-full justify-between h-auto min-h-10 px-3 py-2 font-normal",
                                             !field.value?.length && "text-muted-foreground"
                                         )}
                                     >
@@ -272,6 +272,7 @@ export function EditProductForm({ product, onSuccess }: EditProductFormProps) {
                                                 "Selecione as formações"
                                             )}
                                         </div>
+                                        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </FormControl>
                             </PopoverTrigger>

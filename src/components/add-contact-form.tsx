@@ -15,7 +15,7 @@ import { createContact } from '@/services/contactService';
 import { getTags } from '@/services/tagService';
 import type { Tag } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Check, XCircle } from 'lucide-react';
+import { Check, XCircle, ChevronsUpDown } from 'lucide-react';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.'),
@@ -127,7 +127,7 @@ export function AddContactForm({ onSuccess }: AddContactFormProps) {
                       variant="outline"
                       role="combobox"
                       className={cn(
-                        "w-full justify-start h-auto min-h-10 px-3 py-2 text-left font-normal",
+                        "w-full justify-between h-auto min-h-10 px-3 py-2 font-normal",
                         !field.value?.length && "text-muted-foreground"
                       )}
                     >
@@ -167,6 +167,7 @@ export function AddContactForm({ onSuccess }: AddContactFormProps) {
                           "Selecione as tags"
                         )}
                       </div>
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
