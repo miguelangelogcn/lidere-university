@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { OnboardingProcess } from '@/lib/types';
-import { getOnboardingProcesses, updateOnboardingProcess } from '@/services/deliveryService';
+import { getOnboardingProcesses, updateOnboardingProcess, deleteOnboardingProcess } from '@/services/deliveryService';
 import { DndContext, DragEndEvent, DragStartEvent, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { createPortal } from 'react-dom';
 import { DeliveryColumn } from './delivery-column';
@@ -37,6 +37,8 @@ export function DeliveryKanbanBoard() {
   const [selectedOnboardingProcess, setSelectedOnboardingProcess] = useState<OnboardingProcess | null>(null);
   const [isConfirmDoneDialogOpen, setIsConfirmDoneDialogOpen] = useState(false);
   const [pendingMove, setPendingMove] = useState<{ activeId: string; overId: ColumnId } | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [processToDelete, setProcessToDelete] = useState<OnboardingProcess | null>(null);
   const { toast } = useToast();
 
   const fetchOnboardingProcesses = async () => {
@@ -144,6 +146,25 @@ export function DeliveryKanbanBoard() {
     }
   };
 
+  const handleOpenDeleteDialog = (process: OnboardingProcess) => {
+    setProcessToDelete(process);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteOnboarding = async () => {
+    if (!processToDelete) return;
+    try {
+        await deleteOnboardingProcess(processToDelete.id);
+        toast({ title: 'Sucesso!', description: 'Onboarding excluído.' });
+        fetchOnboardingProcesses();
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro!', description: 'Falha ao excluir o onboarding.' });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setProcessToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -163,13 +184,14 @@ export function DeliveryKanbanBoard() {
               title={columnTitles[columnId]}
               onboardingProcesses={columns[columnId]}
               onCardClick={setSelectedOnboardingProcess}
+              onDeleteProcess={handleOpenDeleteDialog}
             />
           ))}
         </div>
         
         {typeof document !== 'undefined' && createPortal(
           <DragOverlay>
-            {activeOnboardingProcess && <DeliveryCard onboardingProcess={activeOnboardingProcess} onClick={() => {}} />}
+            {activeOnboardingProcess && <DeliveryCard onboardingProcess={activeOnboardingProcess} onClick={() => {}} onDelete={() => {}} />}
           </DragOverlay>,
           document.body
         )}
@@ -193,6 +215,23 @@ export function DeliveryKanbanBoard() {
             <AlertDialogCancel onClick={() => setPendingMove(null)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDone}>
               Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Essa ação é irreversível e irá excluir permanentemente o processo de onboarding para <span className="font-bold">{processToDelete?.contactName}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProcessToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteOnboarding} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

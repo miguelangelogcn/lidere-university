@@ -10,9 +10,10 @@ type OnboardingColumnProps = {
   title: string;
   onboardingProcesses: OnboardingProcess[];
   onCardClick: (onboardingProcess: OnboardingProcess) => void;
+  onDeleteProcess: (onboardingProcess: OnboardingProcess) => void;
 };
 
-export function DeliveryColumn({ id, title, onboardingProcesses, onCardClick }: OnboardingColumnProps) {
+export function DeliveryColumn({ id, title, onboardingProcesses, onCardClick, onDeleteProcess }: OnboardingColumnProps) {
   const { setNodeRef } = useSortable({ id });
 
   const onboardingProcessIds = useMemo(() => onboardingProcesses.map((d) => d.id), [onboardingProcesses]);
@@ -30,6 +31,7 @@ export function DeliveryColumn({ id, title, onboardingProcesses, onCardClick }: 
               key={onboardingProcess.id}
               onboardingProcess={onboardingProcess}
               onClick={() => onCardClick(onboardingProcess)}
+              onDelete={() => onDeleteProcess(onboardingProcess)}
             />
           ))}
         </SortableContext>

@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { OnboardingProcess } from '@/lib/types';
-import { collection, getDocs, doc, updateDoc, addDoc, type DocumentData } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, type DocumentData, deleteDoc } from 'firebase/firestore';
 
 const onboardingProcessCollection = collection(db, 'onboardings');
 
@@ -54,5 +54,15 @@ export async function updateOnboardingProcess(onboardingId: string, data: Partia
     } catch (error) {
         console.error(`Error updating onboarding process ${onboardingId}:`, error);
         throw new Error("Falha ao atualizar o onboarding.");
+    }
+}
+
+export async function deleteOnboardingProcess(onboardingId: string): Promise<void> {
+    try {
+        const onboardingDoc = doc(db, 'onboardings', onboardingId);
+        await deleteDoc(onboardingDoc);
+    } catch (error) {
+        console.error(`Error deleting onboarding process ${onboardingId}:`, error);
+        throw new Error("Falha ao excluir o onboarding.");
     }
 }
