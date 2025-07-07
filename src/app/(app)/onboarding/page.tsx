@@ -76,8 +76,14 @@ export default function OnboardingPage() {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl p-0">
                        {loadingProducts ? (
-                         <div className="flex items-center justify-center p-6 h-48">
-                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                         <div className="p-6">
+                           <DialogHeader>
+                               <DialogTitle>Gerenciar Onboardings</DialogTitle>
+                               <DialogDescription>Carregando produtos...</DialogDescription>
+                           </DialogHeader>
+                           <div className="flex items-center justify-center h-48">
+                               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                           </div>
                          </div>
                        ) : (
                          <ManageOnboardings products={products} onSuccess={handleSuccess} />
