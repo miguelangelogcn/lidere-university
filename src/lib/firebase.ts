@@ -4,10 +4,7 @@ import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-
-if (!apiKey || apiKey.startsWith('<YOUR_')) {
-    console.error('A chave de API do Firebase (NEXT_PUBLIC_FIREBASE_API_KEY) não está configurada corretamente no seu arquivo .env. Por favor, verifique o valor e reinicie o servidor de desenvolvimento.');
-}
+const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: apiKey,
@@ -16,8 +13,12 @@ const firebaseConfig: FirebaseOptions = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
+
+// Only add measurementId if it exists, to make it optional
+if (measurementId) {
+    firebaseConfig.measurementId = measurementId;
+}
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];

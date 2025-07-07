@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -24,7 +23,11 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/inicio');
     } catch (err: any) {
-      setError('Falha ao fazer login. Verifique seu email e senha.');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        setError('Email ou senha inválidos.');
+      } else {
+        setError('Falha ao fazer login. Verifique sua conexão ou a configuração do Firebase.');
+      }
       console.error(err);
     }
   };
