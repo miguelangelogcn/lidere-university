@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +32,7 @@ const OPTIONAL_FIELDS = [
     { id: 'tags', label: 'Tags (separadas por vírgula)' },
     { id: 'city', label: 'Cidade' },
     { id: 'isStudent', label: 'É Aluno (true/false)' },
-    { id: 'formations', label: 'Formações (nomes por vírgula)' },
+    { id: 'products', label: 'Produtos (nomes por vírgula)' },
 ];
 
 export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
@@ -89,7 +90,7 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
     };
     
     const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city,formations\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo,\"Curso de Vendas,Curso de Marketing\"";
+        const csvContent = "data:text/csv;charset=utf-8," + "name,phone,email,tags,is_student,city,products\nJohn Doe,11999998888,john.doe@example.com,lead_quente,true,São Paulo,\"Produto A,Produto B\"";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -153,20 +154,8 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         <Checkbox id="grant-access" checked={studentConfig.grantAccess} onCheckedChange={(checked) => setStudentConfig(prev => ({ ...prev, grantAccess: !!checked }))} />
                                         <Label htmlFor="grant-access" className="font-normal cursor-pointer">
                                             Criar acesso de aluno para contatos com email e marcados como "É Aluno".
-                                            <p className="text-xs text-muted-foreground">Uma senha aleatória será criada para cada novo aluno.</p>
+                                            <p className="text-xs text-muted-foreground">Uma senha aleatória será criada para cada novo aluno e o acesso aos cursos será definido pela coluna 'Produtos' do CSV.</p>
                                         </Label>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Data de Expiração (opcional)</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !studentConfig.expiresAt && "text-muted-foreground")} disabled={!studentConfig.grantAccess}>
-                                                    <CalendarIcon className="mr-2"/>
-                                                    {studentConfig.expiresAt ? format(studentConfig.expiresAt, "PPP", { locale: ptBR }) : <span>Acesso vitalício</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={studentConfig.expiresAt || undefined} onSelect={(date) => setStudentConfig(prev => ({...prev, expiresAt: date || null}))} initialFocus /></PopoverContent>
-                                        </Popover>
                                     </div>
                                 </div>
                             </div>
@@ -228,8 +217,8 @@ export function ImportContactsFlow({ onSuccess }: { onSuccess: () => void }) {
                                         {studentConfig.grantAccess && (
                                             <>
                                                 <li>Contatos marcados como alunos com um email válido receberão acesso.</li>
-                                                <li>O acesso às formações será concedido com base na coluna 'Formações' do seu arquivo.</li>
-                                                <li>O acesso <span className="font-bold">{studentConfig.expiresAt ? `expira em ${format(studentConfig.expiresAt, 'dd/MM/yyyy')}` : 'será vitalício'}</span>.</li>
+                                                <li>O acesso às formações será concedido com base na coluna 'Produtos' do seu arquivo.</li>
+                                                <li>A data de expiração do acesso será calculada com base nas regras de cada produto.</li>
                                             </>
                                         )}
                                     </ul>

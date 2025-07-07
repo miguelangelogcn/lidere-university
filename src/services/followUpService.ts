@@ -18,6 +18,7 @@ function docToFollowUpProcess(doc: DocumentData): FollowUpProcess {
         status: data.status,
         mentorships: data.mentorships || [],
         actionPlan: data.actionPlan || [],
+        followUpEndDate: data.followUpEndDate || null,
     };
 }
 
@@ -57,6 +58,7 @@ export async function getFollowUpProcesses(): Promise<SerializableFollowUpProces
                 status: data.status,
                 mentorships,
                 actionPlan,
+                followUpEndDate: data.followUpEndDate?.toDate ? data.followUpEndDate.toDate().toISOString() : null,
             };
         });
     } catch (error) {
@@ -70,13 +72,18 @@ export async function createFollowUpProcess(data: {
     contactName: string;
     productId: string;
     productName: string;
+    followUpEndDate?: Date | null;
 }): Promise<void> {
     try {
         const followUpData: Omit<FollowUpProcess, 'id'> = {
-            ...data,
+            contactId: data.contactId,
+            contactName: data.contactName,
+            productId: data.productId,
+            productName: data.productName,
             status: 'todo',
             mentorships: [],
             actionPlan: [],
+            followUpEndDate: data.followUpEndDate || null,
         };
         await addDoc(followUpCollection, followUpData);
     } catch (error) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -21,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { createFollowUpProcess } from '@/services/followUpService';
+import { getProductById } from '@/services/productService';
 
 type ColumnId = 'todo' | 'doing' | 'done';
 
@@ -128,14 +130,33 @@ export function DeliveryKanbanBoard() {
 
     try {
         await updateOnboardingProcess(activeId, { status: overId });
-        await createFollowUpProcess({
-            contactId: activeItem.contactId,
-            contactName: activeItem.contactName,
-            productId: activeItem.productId,
-            productName: activeItem.productName,
-        });
+        
+        const product = await getProductById(activeItem.productId);
+        let followUpEndDate: Date | null = null;
+        let shouldCreateFollowUp = false;
 
-        toast({ title: 'Onboarding Concluído!', description: 'Um card de acompanhamento foi criado.' });
+        if (product && product.hasFollowUp) {
+            shouldCreateFollowUp = true;
+            if (product.followUpDays && product.followUpDays > 0) {
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + product.followUpDays);
+                followUpEndDate = endDate;
+            }
+        }
+
+        if (shouldCreateFollowUp) {
+            await createFollowUpProcess({
+                contactId: activeItem.contactId,
+                contactName: activeItem.contactName,
+                productId: activeItem.productId,
+                productName: activeItem.productName,
+                followUpEndDate: followUpEndDate,
+            });
+            toast({ title: 'Onboarding Concluído!', description: 'Um card de acompanhamento foi criado.' });
+        } else {
+             toast({ title: 'Onboarding Concluído!', description: 'Nenhum acompanhamento necessário para este produto.' });
+        }
+        
         fetchOnboardingProcesses(); 
     } catch (error) {
         toast({ variant: 'destructive', title: 'Erro!', description: 'Falha ao concluir o onboarding.' });
@@ -208,7 +229,7 @@ export function DeliveryKanbanBoard() {
           <AlertDialogHeader>
             <AlertDialogTitle>Concluir Onboarding?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação marcará o onboarding como "Feito" e criará um novo card de acompanhamento para este cliente e produto. Você tem certeza?
+              Esta ação marcará o onboarding como "Feito". Se o produto tiver acompanhamento, um novo card será criado. Você tem certeza?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

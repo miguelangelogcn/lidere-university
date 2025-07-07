@@ -1,8 +1,9 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
 import type { Product, OnboardingStep } from '@/lib/types';
-import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch, getDoc } from 'firebase/firestore';
 
 function docToProduct(doc: DocumentData): Product {
     const data = doc.data();
@@ -13,6 +14,10 @@ function docToProduct(doc: DocumentData): Product {
         deliverables: data.deliverables || [],
         presentationUrl: data.presentationUrl || null,
         warranty: data.warranty || '',
+        formationId: data.formationId || null,
+        contentAccessDays: data.contentAccessDays ?? null,
+        hasFollowUp: data.hasFollowUp || false,
+        followUpDays: data.followUpDays ?? null,
     };
 }
 
@@ -30,6 +35,21 @@ export async function getProducts(): Promise<Product[]> {
     return [];
   }
 }
+
+export async function getProductById(id: string): Promise<Product | null> {
+    try {
+        const productDocRef = doc(db, 'products', id);
+        const docSnap = await getDoc(productDocRef);
+        if (docSnap.exists()) {
+            return docToProduct(docSnap);
+        }
+        return null;
+    } catch (error) {
+        console.error("Error fetching product by id: ", error);
+        return null;
+    }
+}
+
 
 type OnboardingStepData = Omit<OnboardingStep, 'id'>;
 

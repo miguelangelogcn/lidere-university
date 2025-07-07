@@ -1,3 +1,4 @@
+
 export type Contact = {
   id: string;
   name: string;
@@ -75,7 +76,11 @@ export type Product = {
   deliverables: string[];
   presentationUrl?: string | null;
   warranty: string;
-}
+  formationId: string | null;
+  contentAccessDays: number | null;
+  hasFollowUp: boolean;
+  followUpDays: number | null;
+};
 
 export type OnboardingStep = {
   id: string;
@@ -135,6 +140,7 @@ export type FollowUpProcess = {
   status: 'todo' | 'doing' | 'done';
   mentorships?: Mentorship[];
   actionPlan?: ActionItem[];
+  followUpEndDate?: any; // Firestore Timestamp
 };
 
 // Types for passing data from Server to Client Components
@@ -145,9 +151,10 @@ export type SerializableActionItem = Omit<ActionItem, 'dueDate' | 'submittedAt' 
     validatedAt: string | null;
 };
 
-export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan'> & {
+export type SerializableFollowUpProcess = Omit<FollowUpProcess, 'mentorships' | 'actionPlan' | 'followUpEndDate'> & {
   mentorships?: SerializableMentorship[];
   actionPlan?: SerializableActionItem[];
+  followUpEndDate?: string | null;
 };
 
 export type Comment = {

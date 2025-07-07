@@ -1,21 +1,27 @@
+
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { createProduct } from '@/services/productService';
+import { getFormations } from '@/services/formationService';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { PlusCircle, Trash2, Loader2, Upload, X, ChevronDown, ClipboardCheck } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Upload, X, ChevronDown, ClipboardCheck, Info } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Separator } from './ui/separator';
 import { Accordion, AccordionContent as OnboardingAccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import type { SerializableFormation } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
+import { Alert, AlertDescription } from './ui/alert';
 
 const onboardingStepSchema = z.object({
   title: z.string().min(1, 'O título da etapa é obrigatório.'),
@@ -30,7 +36,20 @@ const productSchema = z.object({
   warranty: z.string().min(1, 'A garantia é obrigatória.'),
   presentationUrl: z.string().optional(),
   onboardingSteps: z.array(onboardingStepSchema).optional(),
+  formationId: z.string().nullable().optional(),
+  hasFollowUp: z.boolean().default(false),
+  contentAccessDays: z.coerce.number().int().min(0, "Deve ser um número positivo ou zero.").optional().nullable(),
+  followUpDays: z.coerce.number().int().min(0, "Deve ser um número positivo ou zero.").optional().nullable(),
+}).refine(data => {
+    if (data.hasFollowUp) {
+        return data.followUpDays !== undefined && data.followUpDays !== null && data.followUpDays > 0;
+    }
+    return true;
+}, {
+    message: "Os dias de acompanhamento são obrigatórios se a opção for marcada e devem ser maior que zero.",
+    path: ["followUpDays"],
 });
+
 
 type ProductFormValues = z.infer<typeof productSchema>;
 type OnboardingStepValues = z.infer<typeof onboardingStepSchema>;
@@ -43,6 +62,7 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [formations, setFormations] = useState<SerializableFormation[]>([]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -53,8 +73,22 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       warranty: '',
       presentationUrl: '',
       onboardingSteps: [],
+      formationId: null,
+      hasFollowUp: false,
+      contentAccessDays: null,
+      followUpDays: null,
     },
   });
+  
+  const hasFollowUp = form.watch('hasFollowUp');
+
+  useEffect(() => {
+    async function fetchFormationsList() {
+        const data = await getFormations();
+        setFormations(data);
+    }
+    fetchFormationsList();
+  }, [])
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -100,6 +134,9 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
     try {
       const productData = {
         ...data,
+        contentAccessDays: data.contentAccessDays || null,
+        followUpDays: data.followUpDays || null,
+        formationId: data.formationId || null,
         deliverables: data.deliverables.map(d => d.value),
         onboardingSteps: (data.onboardingSteps || []).reduce((acc, step) => {
             const day = step.day;
@@ -165,6 +202,76 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
 
         <Separator />
         
+        <div className="space-y-4 p-4 border rounded-md">
+            <h3 className="font-medium">Acesso e Acompanhamento</h3>
+             <FormField
+                control={form.control}
+                name="formationId"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Formação Vinculada (Conteúdo)</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Nenhuma formação vinculada" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="">Nenhuma formação vinculada</SelectItem>
+                                {formations.map(f => (
+                                    <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormDescription>Selecione a formação que este produto dará acesso.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="contentAccessDays"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Validade do Acesso ao Conteúdo (dias)</FormLabel>
+                        <FormControl><Input type="number" placeholder="Ex: 365" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                        <FormDescription>Deixe em branco para acesso vitalício.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name="hasFollowUp"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="space-y-0.5">
+                            <FormLabel>Este produto inclui acompanhamento?</FormLabel>
+                            <FormDescription>Marque se o time fará acompanhamento deste cliente.</FormDescription>
+                        </div>
+                        <FormControl>
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
+            {hasFollowUp && (
+                 <FormField
+                    control={form.control}
+                    name="followUpDays"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Validade do Acompanhamento (dias)</FormLabel>
+                            <FormControl><Input type="number" placeholder="Ex: 90" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                            <FormDescription>Por quantos dias o cliente terá acompanhamento após a compra.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
+        </div>
+
+
         <Collapsible>
             <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between">
@@ -173,6 +280,12 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
                 </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2 space-y-4">
+                 <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                        O processo de onboarding é a série de tarefas que o cliente deve cumprir logo após a compra. O acompanhamento começa após o onboarding ser finalizado.
+                    </AlertDescription>
+                 </Alert>
                  <Accordion type="multiple" className="w-full">
                     {days.map(day => {
                         const dayFields = onboardingFields
