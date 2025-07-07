@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import type { Product } from '@/lib/types';
-import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import type { Product, OnboardingStep } from '@/lib/types';
+import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 function docToProduct(doc: DocumentData): Product {
     const data = doc.data();
@@ -31,12 +31,38 @@ export async function getProducts(): Promise<Product[]> {
   }
 }
 
-export async function createProduct(data: Omit<Product, 'id'>): Promise<void> {
+type OnboardingStepData = Omit<OnboardingStep, 'id'>;
+
+export async function createProduct(data: Omit<Product, 'id'> & { onboardingSteps?: OnboardingStepData[] }): Promise<void> {
     try {
+        const batch = writeBatch(db);
+
+        // 1. Create product document
         const productsCollection = collection(db, 'products');
-        await addDoc(productsCollection, data);
+        const newProductRef = doc(productsCollection);
+        const { onboardingSteps, ...productData } = data;
+        batch.set(newProductRef, productData);
+
+        // 2. Create onboarding template if steps are provided
+        if (onboardingSteps && onboardingSteps.length > 0) {
+            const onboardingTemplateRef = doc(db, 'onboardingTemplates', newProductRef.id);
+            const stepsWithIds: OnboardingStep[] = onboardingSteps.map((step) => ({
+                ...step,
+                id: doc(collection(db, 'random')).id,
+            }));
+            const onboardingData = {
+                id: newProductRef.id,
+                productId: newProductRef.id,
+                productName: data.name,
+                steps: stepsWithIds,
+            };
+            batch.set(onboardingTemplateRef, onboardingData);
+        }
+
+        await batch.commit();
+
     } catch (error) {
-        console.error("Error creating product: ", error);
+        console.error("Error creating product with onboarding: ", error);
         throw new Error("Falha ao criar produto.");
     }
 }

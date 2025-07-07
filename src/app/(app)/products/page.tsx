@@ -13,7 +13,7 @@ import {
 import { getProducts, deleteProduct } from "@/services/productService";
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle, FileText } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileText, Settings } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,7 @@ import {
 import { AddProductForm } from "@/components/add-product-form";
 import { EditProductForm } from "@/components/edit-product-form";
 import { useToast } from "@/hooks/use-toast";
+import { ManageOnboardings } from "@/components/manage-onboardings";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -49,6 +50,7 @@ export default function ProductsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isManageOnboardingsOpen, setIsManageOnboardingsOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
 
@@ -72,6 +74,7 @@ export default function ProductsPage() {
     setIsAddDialogOpen(false);
     setIsEditDialogOpen(false);
     setSelectedProduct(null);
+    setIsManageOnboardingsOpen(false);
     fetchProducts();
     toast({ title: "Sucesso!", description: "Operação realizada com sucesso." });
   };
@@ -96,6 +99,20 @@ export default function ProductsPage() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center">
             <div className="ml-auto flex items-center gap-2">
+                 <Dialog open={isManageOnboardingsOpen} onOpenChange={setIsManageOnboardingsOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                             <Settings className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                               Gerenciar Onboardings
+                            </span>
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl p-0">
+                       <ManageOnboardings products={products} onSuccess={handleSuccess} />
+                    </DialogContent>
+                </Dialog>
+
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm" className="h-8 gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
@@ -109,7 +126,7 @@ export default function ProductsPage() {
                         <DialogHeader>
                           <DialogTitle>Adicionar Novo Produto</DialogTitle>
                           <DialogDescription>
-                            Preencha os dados do novo produto.
+                            Preencha os dados e defina o processo de onboarding para o novo produto.
                           </DialogDescription>
                         </DialogHeader>
                         <AddProductForm onSuccess={handleSuccess} />

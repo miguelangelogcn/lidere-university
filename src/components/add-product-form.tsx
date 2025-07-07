@@ -12,7 +12,16 @@ import { createProduct } from '@/services/productService';
 import { useToast } from "@/hooks/use-toast";
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { PlusCircle, Trash2, Loader2, Upload, X } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Upload, X, ChevronDown, ClipboardCheck } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
+import { Separator } from './ui/separator';
+import { Accordion, AccordionContent as OnboardingAccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+
+const onboardingStepSchema = z.object({
+  title: z.string().min(1, 'O título da etapa é obrigatório.'),
+  description: z.string().min(1, 'A descrição da etapa é obrigatória.'),
+  day: z.number(),
+});
 
 const productSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.'),
@@ -20,9 +29,11 @@ const productSchema = z.object({
   deliverables: z.array(z.object({ value: z.string().min(1, "Entregável não pode ser vazio.") })),
   warranty: z.string().min(1, 'A garantia é obrigatória.'),
   presentationUrl: z.string().optional(),
+  onboardingSteps: z.array(onboardingStepSchema).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
+type OnboardingStepValues = z.infer<typeof onboardingStepSchema>;
 
 type AddProductFormProps = {
   onSuccess: () => void;
@@ -41,12 +52,18 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       deliverables: [{ value: '' }],
       warranty: '',
       presentationUrl: '',
+      onboardingSteps: [],
     },
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "deliverables",
+  });
+  
+  const { fields: onboardingFields, append: appendOnboardingStep, remove: removeOnboardingStep } = useFieldArray({
+    control: form.control,
+    name: 'onboardingSteps'
   });
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +101,12 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       const productData = {
         ...data,
         deliverables: data.deliverables.map(d => d.value),
+        onboardingSteps: (data.onboardingSteps || []).reduce((acc, step) => {
+            const day = step.day;
+            const order = acc.filter(s => s.day === day).length;
+            acc.push({ ...step, order });
+            return acc;
+        }, [] as (OnboardingStepValues & { order: number })[]),
       };
       await createProduct(productData);
       onSuccess();
@@ -91,52 +114,26 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       toast({ variant: "destructive", title: "Erro!", description: err.message || 'Falha ao criar produto.' });
     }
   };
+  
+  const handleAddOnboardingStep = (day: number) => {
+    appendOnboardingStep({ title: '', description: '', day: day });
+  };
+  
+  const days = Array.from({ length: 8 }, (_, i) => i); // D0 to D7
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome do Produto</FormLabel>
-              <FormControl><Input placeholder="Ex: Consultoria Premium" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="price"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preço (R$)</FormLabel>
-              <FormControl><Input type="number" placeholder="199.90" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="warranty"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Garantia</FormLabel>
-              <FormControl><Input placeholder="Ex: 7 dias incondicional" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nome do Produto</FormLabel><FormControl><Input placeholder="Ex: Consultoria Premium" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Preço (R$)</FormLabel><FormControl><Input type="number" placeholder="199.90" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="warranty" render={({ field }) => ( <FormItem><FormLabel>Garantia</FormLabel><FormControl><Input placeholder="Ex: 7 dias incondicional" {...field} /></FormControl><FormMessage /></FormItem> )}/>
 
         <div>
             <FormLabel>Apresentação (PDF)</FormLabel>
             {fileName ? (
                 <div className="flex items-center justify-between mt-2 p-2 border rounded-md">
                     <span className="text-sm text-muted-foreground truncate">{fileName}</span>
-                    <Button type="button" variant="ghost" size="icon" onClick={removeFile}>
-                        <X className="h-4 w-4" />
-                    </Button>
+                    <Button type="button" variant="ghost" size="icon" onClick={removeFile}> <X className="h-4 w-4" /> </Button>
                 </div>
             ) : (
                 <div className="relative mt-2">
@@ -151,33 +148,62 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
             )}
         </div>
 
-
         <div>
           <FormLabel>Entregáveis</FormLabel>
           <div className="space-y-2 mt-2">
             {fields.map((field, index) => (
-              <FormField
-                key={field.id}
-                control={form.control}
-                name={`deliverables.${index}.value`}
-                render={({ field }) => (
-                  <FormItem className="flex items-center gap-2">
-                    <FormControl>
-                        <Textarea placeholder={`Entregável ${index + 1}`} {...field} rows={1} />
-                    </FormControl>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </FormItem>
-                )}
-              />
+              <FormField key={field.id} control={form.control} name={`deliverables.${index}.value`} render={({ field }) => (
+                <FormItem className="flex items-center gap-2">
+                  <FormControl><Textarea placeholder={`Entregável ${index + 1}`} {...field} rows={1} /></FormControl>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
+                </FormItem>
+              )}/>
             ))}
           </div>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ value: "" })}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Entregável
-          </Button>
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({ value: "" })}> <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Entregável </Button>
         </div>
+
+        <Separator />
+        
+        <Collapsible>
+            <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between">
+                    <div className='flex items-center gap-2'><ClipboardCheck /> Processo de Onboarding (Opcional)</div>
+                    <ChevronDown className="h-4 w-4" />
+                </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2 space-y-4">
+                 <Accordion type="multiple" className="w-full">
+                    {days.map(day => {
+                        const dayFields = onboardingFields
+                            .map((field, index) => ({ ...field, originalIndex: index }))
+                            .filter(field => (field as any).day === day);
+
+                        return (
+                            <AccordionItem value={String(day)} key={day}>
+                                <AccordionTrigger>Dia {day}</AccordionTrigger>
+                                <OnboardingAccordionContent className="space-y-4">
+                                    {dayFields.length > 0 ? (
+                                        dayFields.map((field) => (
+                                            <div key={field.id} className="flex items-start gap-3 p-4 border rounded-lg bg-background/50">
+                                                <div className="flex-grow space-y-3">
+                                                    <FormField control={form.control} name={`onboardingSteps.${field.originalIndex}.title`} render={({ field }) => ( <FormItem><FormLabel>Título da Tarefa</FormLabel><FormControl><Input placeholder={`Título da Tarefa`} {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                                                    <FormField control={form.control} name={`onboardingSteps.${field.originalIndex}.description`} render={({ field }) => ( <FormItem><FormLabel>Descrição</FormLabel><FormControl><Textarea placeholder="Descreva o que deve ser feito..." {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                                                </div>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeOnboardingStep(field.originalIndex)}> <Trash2 className="h-4 w-4 text-destructive" /> </Button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhuma tarefa para este dia.</p>
+                                    )}
+                                    <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => handleAddOnboardingStep(day)}> <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Tarefa ao Dia {day} </Button>
+                                </OnboardingAccordionContent>
+                            </AccordionItem>
+                        );
+                    })}
+                </Accordion>
+            </CollapsibleContent>
+        </Collapsible>
 
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground mt-4" disabled={form.formState.isSubmitting || isUploading}>
           {form.formState.isSubmitting ? 'Criando...' : 'Criar Produto'}
