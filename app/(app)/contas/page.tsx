@@ -121,13 +121,13 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     }, [companyFilteredAccounts, date]);
     
     const { totalPending, totalOverdue } = useMemo(() => {
-        const pending = companyFilteredAccounts.filter(r => r.status === 'pending');
+        const pending = dateFilteredAccounts.filter(r => r.status === 'pending');
         const overdue = pending.filter(r => isPast(new Date(r.dueDate)) && !isToday(new Date(r.dueDate)));
         return { 
             totalPending: pending.reduce((acc, r) => acc + r.amount, 0),
             totalOverdue: overdue.reduce((acc, r) => acc + r.amount, 0)
         };
-    }, [companyFilteredAccounts]);
+    }, [dateFilteredAccounts]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
