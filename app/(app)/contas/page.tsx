@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -70,6 +70,13 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
         setIsFormOpen(false);
         setAccountForAction(null);
         fetchData();
+    };
+    
+    const handleClearFilters = () => {
+        setDate({
+            from: startOfMonth(new Date()),
+            to: endOfMonth(new Date()),
+        });
     };
     
     const handleMarkAsPaid = async (account: SerializableAccount) => {
@@ -147,45 +154,51 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                     <CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5" /> Filtros</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid gap-2">
+                     <div className="grid gap-2">
                         <Label htmlFor="date">Período de Vencimento</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    id="date"
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full md:w-[300px] justify-start text-left font-normal",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date?.from ? (
-                                        date.to ? (
-                                            <>
-                                                {format(date.from, "dd/MM/yy", { locale: ptBR })} -{" "}
-                                                {format(date.to, "dd/MM/yy", { locale: ptBR })}
-                                            </>
+                        <div className="flex items-center gap-2">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        id="date"
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full md:w-[300px] justify-start text-left font-normal",
+                                            !date && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {date?.from ? (
+                                            date.to ? (
+                                                <>
+                                                    {format(date.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                                                    {format(date.to, "dd/MM/yy", { locale: ptBR })}
+                                                </>
+                                            ) : (
+                                                format(date.from, "dd/MM/yy", { locale: ptBR })
+                                            )
                                         ) : (
-                                            format(date.from, "dd/MM/yy", { locale: ptBR })
-                                        )
-                                    ) : (
-                                        <span>Selecione um período</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={date?.from}
-                                    selected={date}
-                                    onSelect={setDate}
-                                    numberOfMonths={2}
-                                    locale={ptBR}
-                                />
-                            </PopoverContent>
-                        </Popover>
+                                            <span>Selecione um período</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={date?.from}
+                                        selected={date}
+                                        onSelect={setDate}
+                                        numberOfMonths={2}
+                                        locale={ptBR}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="ghost" onClick={handleClearFilters}>
+                                <X className="mr-2 h-4 w-4" />
+                                Limpar
+                            </Button>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
