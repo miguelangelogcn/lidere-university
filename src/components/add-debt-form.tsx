@@ -35,6 +35,13 @@ export function AddDebtForm({ onSuccess }: AddDebtFormProps) {
   
   const form = useForm<DebtFormValues>({
     resolver: zodResolver(debtSchema),
+    defaultValues: {
+        description: '',
+        creditor: '',
+        originalAmount: undefined,
+        interestRate: undefined,
+        companyId: ''
+    }
   });
 
   useEffect(() => {
@@ -78,10 +85,10 @@ export function AddDebtForm({ onSuccess }: AddDebtFormProps) {
         )}/>
         <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="originalAmount" render={({ field }) => (
-                <FormItem><FormLabel>Valor Original (R$)</FormLabel><FormControl><Input type="number" placeholder="50000.00" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Valor Original (R$)</FormLabel><FormControl><Input type="number" placeholder="50000.00" {...field} value={field.value ?? ''} onChange={e => { const num = parseFloat(e.target.value); field.onChange(isNaN(num) ? undefined : num); }} /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="interestRate" render={({ field }) => (
-                <FormItem><FormLabel>Juros (% a.m.)</FormLabel><FormControl><Input type="number" placeholder="1.5" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Juros (% a.m.)</FormLabel><FormControl><Input type="number" placeholder="1.5" {...field} value={field.value ?? ''} onChange={e => { const num = parseFloat(e.target.value); field.onChange(isNaN(num) ? undefined : num); }} /></FormControl><FormMessage /></FormItem>
             )}/>
         </div>
         <FormField control={form.control} name="companyId" render={({ field }) => (
