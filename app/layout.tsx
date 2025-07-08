@@ -1,38 +1,27 @@
-import type { Metadata } from 'next';
-import { Inter, Poppins } from 'next/font/google';
-import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
-import { cn } from '@/lib/utils';
-import DynamicAuthProvider from '@/components/dynamic-auth-provider';
-import { EnvCheckWrapper } from '@/components/env-check-wrapper';
 
-const fontBody = Inter({
-  subsets: ['latin'],
-  variable: '--font-body',
-});
+import type { Metadata } from 'next'
+import { Inter, Lexend } from 'next/font/google'
+import "./globals.css"
+import { Toaster } from '@/components/ui/toaster'
+import DynamicAuthProvider from '@/components/dynamic-auth-provider'
+import { EnvCheckWrapper } from '@/components/env-check-wrapper'
 
-const fontHeadline = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-headline',
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-body' })
+const lexend = Lexend({ subsets: ['latin'], variable: '--font-headline'})
 
 export const metadata: Metadata = {
   title: 'Lidere University',
-  description: 'Sua plataforma de gestão para a Lidere University.',
-  icons: {
-    icon: '/favicon.ico',
-  },
-};
+  description: 'Plataforma para gestão de mentorias e cursos.',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn('font-body antialiased', fontBody.variable, fontHeadline.variable)}>
+    <html lang="pt-BR">
+      <body className={`${inter.variable} ${lexend.variable}`}>
         <EnvCheckWrapper>
           <DynamicAuthProvider>
             {children}
@@ -41,5 +30,5 @@ export default function RootLayout({
         </EnvCheckWrapper>
       </body>
     </html>
-  );
+  )
 }

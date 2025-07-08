@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -23,10 +24,10 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/inicio');
     } catch (err: any) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('Email ou senha inválidos.');
       } else {
-        setError('Falha ao fazer login. Verifique sua conexão ou a configuração do Firebase.');
+        setError('Falha ao fazer login. Tente novamente.');
       }
       console.error(err);
     }
@@ -39,9 +40,9 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Logo className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center font-headline">Login</CardTitle>
+          <CardTitle className="text-2xl text-center font-headline">Acessar Plataforma</CardTitle>
           <CardDescription className="text-center">
-            Acesse a plataforma Lidere University
+            Entre com seu email e senha para continuar.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,5 +1,26 @@
-import { redirect } from 'next/navigation';
+
+'use client';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useAuth } from '@/context/auth-provider';
 
 export default function Home() {
-  redirect('/inicio');
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.replace('/inicio');
+      } else {
+        router.replace('/login');
+      }
+    }
+  }, [user, loading, router]);
+
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <p>Carregando...</p>
+    </div>
+  );
 }
