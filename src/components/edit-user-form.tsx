@@ -43,10 +43,16 @@ export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) 
 
   useEffect(() => {
     if (initialLoad) {
+      const role = roles.find(r => r.id === user.roleId);
+      const rolePermissions = role?.permissions || [];
+      
       if (permissionAssignment === 'role') {
-        const role = roles.find(r => r.id === user.roleId);
-        if (role) setPermissions(role.permissions);
+        setPermissions(rolePermissions);
+      } else if (permissionAssignment === 'hybrid') {
+        const userCustomPermissions = user.permissions || [];
+        setPermissions([...new Set([...rolePermissions, ...userCustomPermissions])]);
       }
+      
       setInitialLoad(false);
     }
   }, [user, roles, permissionAssignment, initialLoad]);
@@ -83,6 +89,7 @@ export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) 
     setLoading(true);
 
     let dataToUpdate: any = { name };
+    const role = roles.find(r => r.id === selectedRoleId);
 
     if (permissionAssignment === 'role') {
         dataToUpdate.roleId = selectedRoleId;
@@ -91,8 +98,15 @@ export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) 
         dataToUpdate.roleId = null;
         dataToUpdate.permissions = permissions;
       } else if (permissionAssignment === 'hybrid') {
+        if (!role) {
+          setError('Cargo selecionado para modo híbrido é inválido.');
+          setLoading(false);
+          return;
+        }
         dataToUpdate.roleId = selectedRoleId;
-        dataToUpdate.permissions = permissions;
+        const rolePermissions = new Set(role.permissions || []);
+        const customPermissions = permissions.filter(p => !rolePermissions.has(p));
+        dataToUpdate.permissions = customPermissions;
       }
 
     try {
@@ -150,8 +164,11 @@ export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) 
 
               const handleModuleSelection = (checked: boolean | 'indeterminate') => {
                   setPermissions((prev) => {
-                    if (checked) return [...new Set([...prev, ...allModuleItems])];
-                    else return prev.filter((p) => !allModuleItems.includes(p));
+                    if (checked) {
+                      return [...new Set([...prev, ...allModuleItems])];
+                    } else {
+                      return prev.filter((p) => !allModuleItems.includes(p));
+                    }
                   });
               };
 
