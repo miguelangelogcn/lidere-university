@@ -17,6 +17,7 @@ function docToSerializableAccount(doc: DocumentData): SerializableAccount {
         companyId: data.companyId,
         companyName: data.companyName,
         status: data.status,
+        category: data.category,
         isRecurring: data.isRecurring,
         notes: data.notes,
         dueDate: (data.dueDate as Timestamp).toDate().toISOString(),

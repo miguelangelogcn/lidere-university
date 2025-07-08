@@ -156,6 +156,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                 <TableRow>
                                     <TableHead>Descrição</TableHead>
                                     <TableHead>Valor</TableHead>
+                                    <TableHead>Categoria</TableHead>
                                     <TableHead>Vencimento</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead><span className="sr-only">Ações</span></TableHead>
@@ -163,7 +164,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
-                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">Carregando...</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="h-24 text-center">Carregando...</TableCell></TableRow>
                                 ) : accounts.length > 0 ? (
                                     accounts.map(account => {
                                         const isOverdue = isPast(new Date(account.dueDate)) && account.status === 'pending' && !isToday(new Date(account.dueDate));
@@ -176,6 +177,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>{formatCurrency(account.amount)}</TableCell>
+                                                <TableCell>{account.category || 'N/A'}</TableCell>
                                                 <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>{format(new Date(account.dueDate), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                                                 <TableCell>
                                                     <Badge variant={account.status === 'paid' ? 'secondary' : 'outline'}>
@@ -199,7 +201,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                         )
                                     })
                                 ) : (
-                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">Nenhuma conta encontrada para esta empresa.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="h-24 text-center">Nenhuma conta encontrada para esta empresa.</TableCell></TableRow>
                                 )}
                             </TableBody>
                          </Table>

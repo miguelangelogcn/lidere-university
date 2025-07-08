@@ -28,6 +28,7 @@ const accountSchema = z.object({
   description: z.string().min(1, 'A descrição é obrigatória.'),
   amount: z.coerce.number().positive('O valor deve ser positivo.'),
   companyId: z.string().min(1, 'A empresa é obrigatória.'),
+  category: z.string().optional(),
   dueDate: z.date({ required_error: 'A data de vencimento é obrigatória.' }),
   isRecurring: z.boolean().default(false),
   recurrence: z.object({
@@ -45,6 +46,23 @@ type AccountFormProps = {
   onSuccess: () => void;
 };
 
+const payableCategories = [
+    'Folha de Pagamentos',
+    'Marketing e Vendas',
+    'Software e Ferramentas',
+    'Infraestrutura (Aluguel, Contas)',
+    'Impostos e Taxas',
+    'Fornecedores',
+    'Pró-labore',
+    'Outras Despesas',
+];
+
+const receivableCategories = [
+    'Venda de Produto',
+    'Venda de Serviço',
+    'Outras Receitas',
+];
+
 export function AccountForm({ accountType, account, onSuccess }: AccountFormProps) {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -56,6 +74,7 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
       description: account?.description || '',
       amount: account?.amount || undefined,
       companyId: account?.companyId || '',
+      category: account?.category || '',
       dueDate: account?.dueDate ? new Date(account.dueDate) : undefined,
       isRecurring: account?.isRecurring || false,
       recurrence: {
@@ -68,6 +87,7 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
   
   const isRecurring = form.watch('isRecurring');
   const isEditing = !!account;
+  const categories = accountType === 'payable' ? payableCategories : receivableCategories;
 
   useEffect(() => {
     async function fetchCompanies() {
@@ -162,13 +182,33 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
                 </FormItem>
             )}/>
         </div>
-        <FormField control={form.control} name="companyId" render={({ field }) => (
-            <FormItem><FormLabel>Empresa</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCompanies}>
-                <FormControl><SelectTrigger><SelectValue placeholder={loadingCompanies ? "Carregando..." : "Selecione a empresa"} /></SelectTrigger></FormControl>
-                <SelectContent>{companies.map(c => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}</SelectContent>
-              </Select><FormMessage /></FormItem>
-        )}/>
+        <div className="grid grid-cols-2 gap-4">
+            <FormField control={form.control} name="companyId" render={({ field }) => (
+                <FormItem><FormLabel>Empresa</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCompanies}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={loadingCompanies ? "Carregando..." : "Selecione a empresa"} /></SelectTrigger></FormControl>
+                    <SelectContent>{companies.map(c => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}</SelectContent>
+                </Select><FormMessage /></FormItem>
+            )}/>
+            <FormField control={form.control} name="category" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Categoria</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {categories.map(category => (
+                                <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )}/>
+        </div>
          <FormField control={form.control} name="notes" render={({ field }) => (
             <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Detalhes adicionais sobre a conta..." {...field} /></FormControl><FormMessage /></FormItem>
         )}/>

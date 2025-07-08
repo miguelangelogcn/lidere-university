@@ -5,6 +5,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -175,6 +176,7 @@ export type Account = {
     description: string;
     amount: number;
     dueDate: any; // Firestore Timestamp
+    category?: string;
     companyId: string;
     companyName?: string;
     status: 'pending' | 'paid';
