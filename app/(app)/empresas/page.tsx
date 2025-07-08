@@ -89,6 +89,10 @@ export default function EmpresasPage() {
         setSelectedCompany(null);
     }
   };
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
 
   return (
     <>
@@ -122,6 +126,7 @@ export default function EmpresasPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome da Empresa</TableHead>
+                <TableHead>Caixa Inicial</TableHead>
                 <TableHead className="w-[100px]">
                   <span className="sr-only">Ações</span>
                 </TableHead>
@@ -130,7 +135,7 @@ export default function EmpresasPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                    <TableCell colSpan={2} className="h-24 text-center">
+                    <TableCell colSpan={3} className="h-24 text-center">
                         Carregando...
                     </TableCell>
                 </TableRow>
@@ -138,6 +143,7 @@ export default function EmpresasPage() {
                 companies.map((company) => (
                   <TableRow key={company.id}>
                     <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableCell>{formatCurrency(company.initialCash || 0)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -161,7 +167,7 @@ export default function EmpresasPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={2} className="h-24 text-center">
+                  <TableCell colSpan={3} className="h-24 text-center">
                     Nenhuma empresa encontrada.
                   </TableCell>
                 </TableRow>

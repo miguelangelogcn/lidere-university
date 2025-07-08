@@ -5,12 +5,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { createCompany } from '@/services/companyService';
 import { useToast } from "@/hooks/use-toast";
 
 const companySchema = z.object({
   name: z.string().min(1, 'O nome da empresa é obrigatório.'),
+  initialCash: z.preprocess(
+    (a) => (a === '' ? undefined : a),
+    z.coerce.number({invalid_type_error: "Valor inválido"}).min(0, "O valor não pode ser negativo").optional()
+  ),
 });
 
 type CompanyFormValues = z.infer<typeof companySchema>;
@@ -26,6 +30,7 @@ export function AddCompanyForm({ onSuccess }: AddCompanyFormProps) {
     resolver: zodResolver(companySchema),
     defaultValues: {
       name: '',
+      initialCash: undefined,
     },
   });
 
@@ -50,6 +55,25 @@ export function AddCompanyForm({ onSuccess }: AddCompanyFormProps) {
               <FormControl>
                 <Input placeholder="Ex: Minha Empresa LTDA" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="initialCash"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Caixa Inicial (R$)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number"
+                  placeholder="5000.00" 
+                  {...field} 
+                  value={field.value ?? ''}
+                />
+              </FormControl>
+               <FormDescription>Opcional. Este valor será registrado como a primeira entrada no caixa.</FormDescription>
               <FormMessage />
             </FormItem>
           )}

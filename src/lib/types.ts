@@ -4,6 +4,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -154,6 +155,7 @@ export type FollowUpProcess = {
 export type Company = {
     id: string;
     name: string;
+    initialCash?: number;
 };
 
 export type FinancialRecord = {

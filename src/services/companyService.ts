@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Company } from '@/lib/types';
-import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, type DocumentData, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 const companiesCollection = collection(db, 'fin-empresas');
 
@@ -11,6 +11,7 @@ function docToCompany(doc: DocumentData): Company {
     return {
         id: doc.id,
         name: data.name || '',
+        initialCash: data.initialCash,
     };
 }
 
@@ -25,9 +26,33 @@ export async function getCompanies(): Promise<Company[]> {
     }
 }
 
-export async function createCompany(data: { name: string }): Promise<void> {
+export async function createCompany(data: { name: string; initialCash?: number }): Promise<void> {
+    const batch = writeBatch(db);
     try {
-        await addDoc(companiesCollection, data);
+        const newCompanyRef = doc(collection(db, 'fin-empresas'));
+        
+        const companyData: { name: string, initialCash?: number } = { name: data.name };
+        if (data.initialCash) {
+            companyData.initialCash = data.initialCash;
+        }
+        
+        batch.set(newCompanyRef, companyData);
+
+        if (data.initialCash && data.initialCash > 0) {
+            const financialRecordsRef = doc(collection(db, 'fin-registros'));
+            batch.set(financialRecordsRef, {
+                description: 'Caixa Inicial',
+                amount: data.initialCash,
+                type: 'income',
+                date: new Date(),
+                category: 'Capital Inicial',
+                companyId: newCompanyRef.id,
+                companyName: data.name,
+                createdAt: new Date()
+            });
+        }
+        
+        await batch.commit();
     } catch (error) {
         console.error("Error creating company: ", error);
         throw new Error("Falha ao criar empresa.");
