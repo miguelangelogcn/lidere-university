@@ -87,7 +87,7 @@ export const appModules: Module[] = [
   },
   {
     id: "diretoria",
-    name: "Diretoria",
+    name: "Gestão",
     items: [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
       { href: "/gerenciar-alunos", icon: GraduationCap, label: "Gerenciar Alunos" },
