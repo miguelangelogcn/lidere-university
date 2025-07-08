@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -15,12 +15,17 @@ import type { SerializableAccount, Company } from '@/lib/types';
 import { getAccounts, updateAccount, deleteAccount } from '@/services/accountsService';
 import { getCompanies } from '@/services/companyService';
 import { AccountForm } from '@/components/account-form';
-import { format, isPast, isToday } from 'date-fns';
+import { format, isPast, isToday, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { DateRange } from 'react-day-picker';
+import { cn } from '@/lib/utils';
 
 
 const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable' }) => {
@@ -32,12 +37,16 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [accountForAction, setAccountForAction] = useState<SerializableAccount | null>(null);
     const { toast } = useToast();
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+    });
 
     const fetchData = async () => {
         setLoading(true);
         try {
             const [accountsData, companiesData] = await Promise.all([
-                getAccounts(accountType, selectedCompanyId),
+                getAccounts(accountType),
                 getCompanies()
             ]);
             setAccounts(accountsData);
@@ -55,7 +64,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     useEffect(() => {
         fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedCompanyId, accountType]);
+    }, [accountType]);
 
     const handleSuccess = () => {
         setIsFormOpen(false);
@@ -87,14 +96,31 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
         }
     };
     
+    const companyFilteredAccounts = useMemo(() => {
+        if (!selectedCompanyId) return [];
+        return accounts.filter(r => r.companyId === selectedCompanyId);
+    }, [accounts, selectedCompanyId]);
+    
+    const dateFilteredAccounts = useMemo(() => {
+        if (!date?.from) return companyFilteredAccounts;
+        return companyFilteredAccounts.filter(account => {
+            const dueDate = new Date(account.dueDate);
+            const from = date.from!;
+            const to = date.to ?? from;
+            const toEndOfDay = new Date(to);
+            toEndOfDay.setHours(23, 59, 59, 999);
+            return dueDate >= from && dueDate <= toEndOfDay;
+        });
+    }, [companyFilteredAccounts, date]);
+    
     const { totalPending, totalOverdue } = useMemo(() => {
-        const pending = accounts.filter(r => r.status === 'pending');
+        const pending = companyFilteredAccounts.filter(r => r.status === 'pending');
         const overdue = pending.filter(r => isPast(new Date(r.dueDate)) && !isToday(new Date(r.dueDate)));
         return { 
             totalPending: pending.reduce((acc, r) => acc + r.amount, 0),
             totalOverdue: overdue.reduce((acc, r) => acc + r.amount, 0)
         };
-    }, [accounts]);
+    }, [companyFilteredAccounts]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -113,6 +139,54 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                             <SelectContent>{companies.map(c => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}</SelectContent>
                         </Select>
                     )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5" /> Filtros</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-2">
+                        <Label htmlFor="date">Período de Vencimento</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full md:w-[300px] justify-start text-left font-normal",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                        date.to ? (
+                                            <>
+                                                {format(date.from, "dd/MM/yy", { locale: ptBR })} -{" "}
+                                                {format(date.to, "dd/MM/yy", { locale: ptBR })}
+                                            </>
+                                        ) : (
+                                            format(date.from, "dd/MM/yy", { locale: ptBR })
+                                        )
+                                    ) : (
+                                        <span>Selecione um período</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                    locale={ptBR}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -165,8 +239,8 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                             <TableBody>
                                 {loading ? (
                                     <TableRow><TableCell colSpan={6} className="h-24 text-center">Carregando...</TableCell></TableRow>
-                                ) : accounts.length > 0 ? (
-                                    accounts.map(account => {
+                                ) : dateFilteredAccounts.length > 0 ? (
+                                    dateFilteredAccounts.map(account => {
                                         const isOverdue = isPast(new Date(account.dueDate)) && account.status === 'pending' && !isToday(new Date(account.dueDate));
                                         return (
                                             <TableRow key={account.id} className={account.status === 'paid' ? 'bg-muted/50 text-muted-foreground' : ''}>
@@ -201,7 +275,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                         )
                                     })
                                 ) : (
-                                    <TableRow><TableCell colSpan={6} className="h-24 text-center">Nenhuma conta encontrada para esta empresa.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={6} className="h-24 text-center">Nenhuma conta encontrada para os filtros selecionados.</TableCell></TableRow>
                                 )}
                             </TableBody>
                          </Table>
