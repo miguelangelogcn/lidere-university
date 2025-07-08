@@ -27,46 +27,39 @@ type EditUserFormProps = {
 type PermissionAssignment = 'role' | 'custom' | 'hybrid';
 
 function getInitialPermissionAssignment(user: AppUser): PermissionAssignment {
-    if (user.roleId && user.permissions?.length > 0) return 'hybrid';
+    if (user.roleId && (user.permissions || []).length > 0) return 'hybrid';
     if (user.roleId) return 'role';
     return 'custom';
 }
 
+function getInitialPermissions(user: AppUser, roles: Role[]): string[] {
+    const role = roles.find(r => r.id === user.roleId);
+    const rolePermissions = role?.permissions || [];
+    const userPermissions = user.permissions || [];
+    return [...new Set([...rolePermissions, ...userPermissions])];
+}
+
 export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) {
   const [name, setName] = useState(user.name || '');
-  const [permissionAssignment, setPermissionAssignment] = useState<PermissionAssignment>(getInitialPermissionAssignment(user));
+  const [permissionAssignment, setPermissionAssignment] = useState<PermissionAssignment>(() => getInitialPermissionAssignment(user));
   const [selectedRoleId, setSelectedRoleId] = useState(user.roleId || '');
-  const [permissions, setPermissions] = useState<string[]>(user.permissions || []);
+  const [permissions, setPermissions] = useState<string[]>(() => getInitialPermissions(user, roles));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
 
   useEffect(() => {
-    if (initialLoad) {
-      const role = roles.find(r => r.id === user.roleId);
-      const rolePermissions = role?.permissions || [];
-      
-      if (permissionAssignment === 'role') {
-        setPermissions(rolePermissions);
-      } else if (permissionAssignment === 'hybrid') {
-        const userCustomPermissions = user.permissions || [];
-        setPermissions([...new Set([...rolePermissions, ...userCustomPermissions])]);
-      }
-      
-      setInitialLoad(false);
+    // This effect ensures that when the selected role changes, the permissions are updated accordingly
+    // in 'role' or 'hybrid' mode. It doesn't run on initial mount.
+    const role = roles.find(r => r.id === selectedRoleId);
+    if (!role && (permissionAssignment === 'role' || permissionAssignment === 'hybrid')) {
+        setPermissions([]);
+        return;
     }
-  }, [user, roles, permissionAssignment, initialLoad]);
 
-  useEffect(() => {
-    if (!initialLoad) {
-        const role = roles.find(r => r.id === selectedRoleId);
-        if ((permissionAssignment === 'role' || permissionAssignment === 'hybrid') && role) {
-          setPermissions(role.permissions || []);
-        } else if (permissionAssignment === 'custom') {
-          setPermissions([]);
-        }
+    if (role && (permissionAssignment === 'role' || permissionAssignment === 'hybrid')) {
+        setPermissions(role.permissions || []);
     }
-  }, [permissionAssignment, selectedRoleId, roles, initialLoad]);
+  }, [selectedRoleId, permissionAssignment, roles]);
 
 
   const handlePermissionChange = (href: string, checked: boolean) => {
@@ -164,11 +157,13 @@ export function EditUserForm({ user, onUserUpdated, roles }: EditUserFormProps) 
 
               const handleModuleSelection = (checked: boolean | 'indeterminate') => {
                   setPermissions((prev) => {
+                    const currentPermissions = new Set(prev);
                     if (checked) {
-                      return [...new Set([...prev, ...allModuleItems])];
+                      allModuleItems.forEach(item => currentPermissions.add(item));
                     } else {
-                      return prev.filter((p) => !allModuleItems.includes(p));
+                      allModuleItems.forEach(item => currentPermissions.delete(item));
                     }
+                    return Array.from(currentPermissions);
                   });
               };
 
