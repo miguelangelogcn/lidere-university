@@ -18,6 +18,7 @@ import {
   DollarSign,
   Building2,
   Landmark,
+  Banknote,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -73,6 +74,7 @@ export const appModules: Module[] = [
     items: [
       { href: "/financeiro", icon: DollarSign, label: "Registros" },
       { href: "/contas", icon: Landmark, label: "Contas" },
+      { href: "/dividas", icon: Banknote, label: "Dívidas" },
       { href: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },

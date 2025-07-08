@@ -3,6 +3,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -184,6 +185,34 @@ export type Account = {
     paidAt?: any | null; // Firestore Timestamp
     createdAt: any; // Firestore Timestamp
 }
+
+export type Debt = {
+    id: string;
+    description: string;
+    creditor: string;
+    originalAmount: number;
+    interestRate: number; // percentage
+    companyId: string;
+    companyName?: string;
+    status: 'aberta' | 'negociada' | 'paga';
+    negotiationDetails?: {
+        numberOfInstallments: number;
+        installmentAmount: number;
+        firstInstallmentDate: any; // Firestore Timestamp
+        linkedAccountIds: string[];
+    } | null;
+    createdAt: any;
+};
+
+export type SerializableDebt = Omit<Debt, 'createdAt' | 'negotiationDetails'> & {
+    createdAt: string;
+    negotiationDetails?: {
+        numberOfInstallments: number;
+        installmentAmount: number;
+        firstInstallmentDate: string;
+        linkedAccountIds: string[];
+    } | null;
+};
 
 export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence'> & {
     dueDate: string;
