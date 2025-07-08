@@ -1,7 +1,2 @@
-import type { Contact, Opportunity, Notification, DealStage } from './types';
-
-export const mockContacts: Contact[] = [];
-
-export const mockOpportunities: Opportunity[] = [];
-
-export const mockNotifications: Notification[] = [];
+// This file contained mock data that is no longer used by the application.
+// It has been cleared to reduce codebase size and complexity.
