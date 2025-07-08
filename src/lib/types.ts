@@ -148,6 +148,11 @@ export type FollowUpProcess = {
   followUpEndDate?: any; // Firestore Timestamp
 };
 
+export type Company = {
+    id: string;
+    name: string;
+};
+
 export type FinancialRecord = {
     id: string;
     description: string;
@@ -155,6 +160,8 @@ export type FinancialRecord = {
     type: 'income' | 'expense';
     date: any; // Firestore Timestamp
     category?: string;
+    companyId: string;
+    companyName?: string;
     createdAt: any; // Firestore Timestamp
 };
 

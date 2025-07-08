@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +16,8 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { addFinancialRecord } from '@/services/financialService';
+import { getCompanies } from '@/services/companyService';
+import type { Company } from '@/lib/types';
 
 const recordSchema = z.object({
   description: z.string().min(1, 'A descrição é obrigatória.'),
@@ -22,6 +25,7 @@ const recordSchema = z.object({
   type: z.enum(['income', 'expense'], { required_error: 'O tipo é obrigatório.' }),
   date: z.date({ required_error: 'A data é obrigatória.' }),
   category: z.string().optional(),
+  companyId: z.string().min(1, 'A empresa é obrigatória.'),
 });
 
 type RecordFormValues = z.infer<typeof recordSchema>;
@@ -32,6 +36,22 @@ type AddFinancialRecordFormProps = {
 
 export function AddFinancialRecordForm({ onSuccess }: AddFinancialRecordFormProps) {
   const { toast } = useToast();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(true);
+
+  useEffect(() => {
+    async function fetchCompanies() {
+      try {
+        const companyList = await getCompanies();
+        setCompanies(companyList);
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao carregar empresas.' });
+      } finally {
+        setLoadingCompanies(false);
+      }
+    }
+    fetchCompanies();
+  }, [toast]);
 
   const form = useForm<RecordFormValues>({
     resolver: zodResolver(recordSchema),
@@ -40,12 +60,17 @@ export function AddFinancialRecordForm({ onSuccess }: AddFinancialRecordFormProp
         type: 'expense',
         date: new Date(),
         category: '',
+        companyId: '',
     },
   });
 
   const onSubmit = async (data: RecordFormValues) => {
     try {
-      await addFinancialRecord(data);
+      const selectedCompany = companies.find(c => c.id === data.companyId);
+      await addFinancialRecord({
+          ...data,
+          companyName: selectedCompany?.name || '',
+      });
       toast({ title: "Sucesso!", description: "Registro financeiro adicionado." });
       onSuccess();
     } catch (err: any) {
@@ -56,6 +81,26 @@ export function AddFinancialRecordForm({ onSuccess }: AddFinancialRecordFormProp
   return (
      <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="companyId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Empresa</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCompanies}>
+                <FormControl>
+                  <SelectTrigger><SelectValue placeholder={loadingCompanies ? "Carregando empresas..." : "Selecione a empresa"} /></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {companies.map(company => (
+                    <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="description"

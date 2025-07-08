@@ -14,6 +14,8 @@ function docToSerializableFinancialRecord(doc: DocumentData): SerializableFinanc
         amount: data.amount,
         type: data.type,
         category: data.category || '',
+        companyId: data.companyId,
+        companyName: data.companyName || '',
         date: data.date?.toDate ? data.date.toDate().toISOString() : new Date().toISOString(),
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
     };

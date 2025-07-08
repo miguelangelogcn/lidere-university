@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, ArrowDownCircle, ArrowUpCircle, DollarSign } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, ArrowDownCircle, ArrowUpCircle, DollarSign, Building2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -46,14 +46,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import type { SerializableFinancialRecord as FinancialRecord } from '@/lib/types';
+import type { SerializableFinancialRecord as FinancialRecord, Company } from '@/lib/types';
 import { getFinancialRecords, deleteFinancialRecord } from '@/services/financialService';
+import { getCompanies } from '@/services/companyService';
 import { AddFinancialRecordForm } from '@/components/add-financial-record-form';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function FinanceiroPage() {
     const [records, setRecords] = useState<FinancialRecord[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -63,10 +68,17 @@ export default function FinanceiroPage() {
     const fetchRecords = async () => {
         setLoading(true);
         try {
-            const data = await getFinancialRecords();
-            setRecords(data);
+            const [recordsData, companiesData] = await Promise.all([
+                getFinancialRecords(),
+                getCompanies()
+            ]);
+            setRecords(recordsData);
+            setCompanies(companiesData);
+            if (companiesData.length > 0 && !selectedCompanyId) {
+              setSelectedCompanyId(companiesData[0].id);
+            }
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao carregar registros financeiros.' });
+            toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao carregar dados financeiros.' });
         } finally {
             setLoading(false);
         }
@@ -94,16 +106,23 @@ export default function FinanceiroPage() {
             setRecordToDelete(null);
         }
     };
+    
+    const filteredRecords = useMemo(() => {
+        if (!selectedCompanyId) return [];
+        return records.filter(r => r.companyId === selectedCompanyId);
+    }, [records, selectedCompanyId]);
 
     const { totalIncome, totalExpense, balance } = useMemo(() => {
-        const income = records.filter(r => r.type === 'income').reduce((acc, r) => acc + r.amount, 0);
-        const expense = records.filter(r => r.type === 'expense').reduce((acc, r) => acc + r.amount, 0);
+        const income = filteredRecords.filter(r => r.type === 'income').reduce((acc, r) => acc + r.amount, 0);
+        const expense = filteredRecords.filter(r => r.type === 'expense').reduce((acc, r) => acc + r.amount, 0);
         return { totalIncome: income, totalExpense: expense, balance: income - expense };
-    }, [records]);
+    }, [filteredRecords]);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
+    
+    const selectedCompanyName = companies.find(c => c.id === selectedCompanyId)?.name || "Nenhuma empresa selecionada";
 
     return (
         <>
@@ -129,6 +148,28 @@ export default function FinanceiroPage() {
                 </Dialog>
             </MainHeader>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5"/> Selecione a Empresa</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <Skeleton className="h-10 w-[300px]" />
+                        ) : (
+                            <Select onValueChange={setSelectedCompanyId} value={selectedCompanyId || ''}>
+                                <SelectTrigger className="w-full md:w-[300px]">
+                                    <SelectValue placeholder="Selecione uma empresa" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {companies.map(company => (
+                                        <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <div className="grid gap-4 md:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -136,7 +177,7 @@ export default function FinanceiroPage() {
                             <ArrowUpCircle className="h-4 w-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-green-500">{formatCurrency(totalIncome)}</div>
+                            <div className="text-2xl font-bold text-green-500">{loading ? <Skeleton className="h-8 w-32" /> : formatCurrency(totalIncome)}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -145,7 +186,7 @@ export default function FinanceiroPage() {
                             <ArrowDownCircle className="h-4 w-4 text-red-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-red-500">{formatCurrency(totalExpense)}</div>
+                            <div className="text-2xl font-bold text-red-500">{loading ? <Skeleton className="h-8 w-32" /> : formatCurrency(totalExpense)}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -155,7 +196,7 @@ export default function FinanceiroPage() {
                         </CardHeader>
                         <CardContent>
                             <div className={`text-2xl font-bold ${balance >= 0 ? 'text-foreground' : 'text-red-500'}`}>
-                                {formatCurrency(balance)}
+                                {loading ? <Skeleton className="h-8 w-32" /> : formatCurrency(balance)}
                             </div>
                         </CardContent>
                     </Card>
@@ -163,8 +204,8 @@ export default function FinanceiroPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Histórico de Registros</CardTitle>
-                        <CardDescription>Lista de todas as transações financeiras.</CardDescription>
+                        <CardTitle>Histórico de Registros ({selectedCompanyName})</CardTitle>
+                        <CardDescription>Lista de todas as transações financeiras para a empresa selecionada.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="border rounded-lg">
@@ -182,8 +223,8 @@ export default function FinanceiroPage() {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow><TableCell colSpan={6} className="h-24 text-center">Carregando...</TableCell></TableRow>
-                                    ) : records.length > 0 ? (
-                                        records.map(record => (
+                                    ) : filteredRecords.length > 0 ? (
+                                        filteredRecords.map(record => (
                                             <TableRow key={record.id}>
                                                 <TableCell className="font-medium">{record.description}</TableCell>
                                                 <TableCell className={record.type === 'income' ? 'text-green-600' : 'text-red-600'}>
@@ -212,7 +253,7 @@ export default function FinanceiroPage() {
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow><TableCell colSpan={6} className="h-24 text-center">Nenhum registro encontrado.</TableCell></TableRow>
+                                        <TableRow><TableCell colSpan={6} className="h-24 text-center">Nenhum registro encontrado para esta empresa.</TableCell></TableRow>
                                     )}
                                 </TableBody>
                              </Table>
