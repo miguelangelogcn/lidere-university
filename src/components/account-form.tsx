@@ -163,7 +163,7 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
         )}/>
         <div className="grid grid-cols-2 gap-4">
             <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem><FormLabel>Valor (R$)</FormLabel><FormControl><Input type="number" placeholder="1500.00" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Valor (R$)</FormLabel><FormControl><Input type="number" placeholder="1500.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="dueDate" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Data de Vencimento</FormLabel>
