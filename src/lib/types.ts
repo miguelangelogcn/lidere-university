@@ -1,6 +1,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -163,6 +164,34 @@ export type FinancialRecord = {
     companyId: string;
     companyName?: string;
     createdAt: any; // Firestore Timestamp
+};
+
+export type Account = {
+    id: string;
+    description: string;
+    amount: number;
+    dueDate: any; // Firestore Timestamp
+    companyId: string;
+    companyName?: string;
+    status: 'pending' | 'paid';
+    isRecurring: boolean;
+    recurrence?: {
+        frequency: 'monthly' | 'yearly';
+        endDate?: any | null; // Firestore Timestamp
+    };
+    notes?: string;
+    paidAt?: any | null; // Firestore Timestamp
+    createdAt: any; // Firestore Timestamp
+}
+
+export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence'> & {
+    dueDate: string;
+    createdAt: string;
+    paidAt?: string | null;
+    recurrence?: {
+        frequency: 'monthly' | 'yearly';
+        endDate?: string | null;
+    };
 };
 
 export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {

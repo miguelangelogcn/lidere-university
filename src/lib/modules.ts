@@ -17,6 +17,8 @@ import {
   Workflow,
   DollarSign,
   Building2,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -71,6 +73,8 @@ export const appModules: Module[] = [
     name: "Financeiro",
     items: [
       { href: "/financeiro", icon: DollarSign, label: "Registros" },
+      { href: "/contas-a-pagar", icon: ArrowDownCircle, label: "Contas a Pagar" },
+      { href: "/contas-a-receber", icon: ArrowUpCircle, label: "Contas a Receber" },
       { href: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },
