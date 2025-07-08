@@ -19,6 +19,7 @@ import {
   Building2,
   Landmark,
   Banknote,
+  LayoutDashboard,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -41,6 +42,13 @@ export const appModules: Module[] = [
     items: [
       { href: "/inicio", icon: Home, label: "Início" },
     ],
+  },
+  {
+    id: "diretor",
+    name: "Diretor",
+    items: [
+      { href: "/dashboards", icon: LayoutDashboard, label: "Dashboards" },
+    ]
   },
   {
     id: "vendas",
@@ -86,7 +94,7 @@ export const appModules: Module[] = [
     ]
   },
   {
-    id: "diretoria",
+    id: "gestao",
     name: "Gestão",
     items: [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
