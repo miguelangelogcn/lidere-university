@@ -21,7 +21,7 @@ import { createAccount, updateAccount } from '@/services/accountsService';
 import type { Company, SerializableAccount } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { addMonths, addYears } from 'date-fns';
+import { addMonths, addYears, addWeeks } from 'date-fns';
 
 
 const accountSchema = z.object({
@@ -31,7 +31,7 @@ const accountSchema = z.object({
   dueDate: z.date({ required_error: 'A data de vencimento é obrigatória.' }),
   isRecurring: z.boolean().default(false),
   recurrence: z.object({
-    frequency: z.enum(['monthly', 'yearly']),
+    frequency: z.enum(['weekly', 'monthly', 'quarterly', 'semiannually', 'yearly']),
     endDate: z.date().optional().nullable(),
   }).optional(),
   notes: z.string().optional(),
@@ -105,10 +105,22 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
             
             while (currentDate <= endDate) {
                 await createAccount(accountType, { ...accountData, dueDate: currentDate });
-                if (data.recurrence.frequency === 'monthly') {
-                    currentDate = addMonths(currentDate, 1);
-                } else {
-                    currentDate = addYears(currentDate, 1);
+                switch (data.recurrence.frequency) {
+                    case 'weekly':
+                        currentDate = addWeeks(currentDate, 1);
+                        break;
+                    case 'monthly':
+                        currentDate = addMonths(currentDate, 1);
+                        break;
+                    case 'quarterly':
+                        currentDate = addMonths(currentDate, 3);
+                        break;
+                    case 'semiannually':
+                        currentDate = addMonths(currentDate, 6);
+                        break;
+                    case 'yearly':
+                        currentDate = addYears(currentDate, 1);
+                        break;
                 }
             }
              toast({ title: "Sucesso!", description: "Contas recorrentes criadas." });
@@ -176,7 +188,13 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
                         <FormItem><FormLabel>Frequência</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                            <SelectContent><SelectItem value="monthly">Mensal</SelectItem><SelectItem value="yearly">Anual</SelectItem></SelectContent>
+                            <SelectContent>
+                                <SelectItem value="weekly">Semanal</SelectItem>
+                                <SelectItem value="monthly">Mensal</SelectItem>
+                                <SelectItem value="quarterly">Trimestral</SelectItem>
+                                <SelectItem value="semiannually">Semestral</SelectItem>
+                                <SelectItem value="yearly">Anual</SelectItem>
+                            </SelectContent>
                           </Select><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="recurrence.endDate" render={({ field }) => (
