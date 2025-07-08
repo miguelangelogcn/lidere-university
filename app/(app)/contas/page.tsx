@@ -15,7 +15,7 @@ import type { SerializableAccount, Company } from '@/lib/types';
 import { getAccounts, updateAccount, deleteAccount } from '@/services/accountsService';
 import { getCompanies } from '@/services/companyService';
 import { AccountForm } from '@/components/account-form';
-import { format, isPast, isToday, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isPast, isToday, startOfMonth, endOfMonth, addDays, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -182,7 +182,13 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                         )}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent className="flex w-auto flex-row p-0" align="start">
+                                    <div className="flex flex-col gap-1 border-r p-3">
+                                        <div className="pb-1 text-sm font-medium">Padrões</div>
+                                        <Button variant="ghost" className="w-full justify-start px-2" onClick={() => setDate({from: startOfMonth(new Date()), to: endOfMonth(new Date())})}>Mês Atual</Button>
+                                        <Button variant="ghost" className="w-full justify-start px-2" onClick={() => setDate({from: startOfMonth(addMonths(new Date(), 1)), to: endOfMonth(addMonths(new Date(), 1))})}>Mês Seguinte</Button>
+                                        <Button variant="ghost" className="w-full justify-start px-2" onClick={() => setDate({from: new Date(), to: addDays(new Date(), 90)})}>Próximos 90 dias</Button>
+                                    </div>
                                     <Calendar
                                         initialFocus
                                         mode="range"
