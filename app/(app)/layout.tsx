@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     {module.items.map(item => (
                                          user?.permissions?.includes(item.href) && (
                                             <SidebarMenuItem key={item.href}>
-                                                <Link href={item.href} legacyBehavior passHref>
+                                                <Link href={item.href}>
                                                     <SidebarMenuButton isActive={pathname === item.href}>
                                                         <item.icon />
                                                         <span>{item.label}</span>
