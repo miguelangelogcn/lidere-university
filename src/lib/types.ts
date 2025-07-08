@@ -1,5 +1,6 @@
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -146,6 +147,22 @@ export type FollowUpProcess = {
   actionPlan?: ActionItem[];
   followUpEndDate?: any; // Firestore Timestamp
 };
+
+export type FinancialRecord = {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+    date: any; // Firestore Timestamp
+    category?: string;
+    createdAt: any; // Firestore Timestamp
+};
+
+export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {
+    date: string;
+    createdAt: string;
+};
+
 
 // Types for passing data from Server to Client Components
 export type SerializableMentorship = Omit<Mentorship, 'createdAt'> & { createdAt: string | null };

@@ -15,6 +15,7 @@ import {
   FileEdit,
   Mail,
   Workflow,
+  DollarSign,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -62,6 +63,13 @@ export const appModules: Module[] = [
     items: [
       { href: "/formacoes", icon: GraduationCap, label: "Formações" },
       { href: "/ferramentas", icon: Wrench, label: "Ferramentas" },
+    ]
+  },
+  {
+    id: "financeiro",
+    name: "Financeiro",
+    items: [
+      { href: "/financeiro", icon: DollarSign, label: "Registros" },
     ]
   },
   {
