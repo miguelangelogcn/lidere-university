@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X, CreditCard, Receipt, DollarSign, Loader2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X, CreditCard, Receipt, DollarSign, Loader2, Undo2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -13,7 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import type { SerializableAccount, Company } from '@/lib/types';
-import { getAccounts, updateAccount, deleteAccount, getPaidReceivablesForPeriod } from '@/services/accountsService';
+import { getAccounts, deleteAccount, getPaidReceivablesForPeriod } from '@/services/accountsService';
 import { getCompanies } from '@/services/companyService';
 import { AccountForm } from '@/components/account-form';
 import { format, isPast, isToday, startOfMonth, endOfMonth, addDays, addMonths, subMonths } from 'date-fns';
@@ -29,7 +29,7 @@ import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { GenerateTaxPaymentForm } from '@/components/generate-tax-payment-form';
 import { Alert, AlertTitle as AlertTitleUI } from '@/components/ui/alert';
-import { markAccountAsPaid } from '@/lib/actions/accountActions';
+import { markAccountAsPaid, markAccountAsPending } from '@/lib/actions/accountActions';
 
 
 const TaxCalculationDialogContent = ({ company, onSuccess }: { company: Company; onSuccess: () => void; }) => {
@@ -226,6 +226,20 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     const handleMarkAsPaid = async (account: SerializableAccount) => {
         try {
             const result = await markAccountAsPaid(accountType, account.id);
+            if (!result.success) {
+                throw new Error(result.message);
+            }
+            toast({ title: 'Sucesso!', description: result.message });
+            fetchData();
+        } catch (error) {
+             const errorMessage = error instanceof Error ? error.message : 'Falha ao atualizar a conta.';
+             toast({ variant: 'destructive', title: 'Erro', description: errorMessage });
+        }
+    };
+
+    const handleMarkAsPending = async (account: SerializableAccount) => {
+        try {
+            const result = await markAccountAsPending(accountType, account.id);
             if (!result.success) {
                 throw new Error(result.message);
             }
@@ -434,7 +448,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                     <TableHead>Valor</TableHead>
                                     <TableHead>Categoria</TableHead>
                                     <TableHead>Vencimento</TableHead>
-                                    <TableHead>Recebimento Previsto</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead><span className="sr-only">Ações</span></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -463,20 +477,24 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                                 <TableCell>{account.category || 'N/A'}</TableCell>
                                                 <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>{format(new Date(account.dueDate), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                                                 <TableCell>
-                                                    {account.expectedPaymentDate ? format(new Date(account.expectedPaymentDate), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                                                    <Badge variant={account.status === 'paid' ? 'secondary' : 'outline'}>
+                                                        {account.status === 'paid' ? (isPayable ? 'Pago' : 'Recebido') : 'Pendente'}
+                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
-                                                            <DropdownMenuContent>
-                                                                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                                {account.status === 'pending' && <DropdownMenuItem onSelect={() => handleMarkAsPaid(account)}><Check className="mr-2 h-4 w-4"/> Marcar como {isPayable ? 'Paga' : 'Recebida'}</DropdownMenuItem>}
-                                                                <DropdownMenuItem onSelect={() => handleActionClick('edit', account)}>Editar</DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-destructive" onSelect={() => handleActionClick('delete', account)}>Excluir</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
+                                                        <DropdownMenuContent>
+                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            {account.status === 'pending' ? (
+                                                                <DropdownMenuItem onSelect={() => handleMarkAsPaid(account)}><Check className="mr-2 h-4 w-4"/> Marcar como {isPayable ? 'Paga' : 'Recebida'}</DropdownMenuItem>
+                                                            ) : (
+                                                                <DropdownMenuItem onSelect={() => handleMarkAsPending(account)}><Undo2 className="mr-2 h-4 w-4"/> Marcar como Pendente</DropdownMenuItem>
+                                                            )}
+                                                            <DropdownMenuItem onSelect={() => handleActionClick('edit', account)}>Editar</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive" onSelect={() => handleActionClick('delete', account)}>Excluir</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </TableCell>
                                             </TableRow>
                                         )

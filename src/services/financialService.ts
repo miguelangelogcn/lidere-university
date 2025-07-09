@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -18,6 +19,7 @@ function docToSerializableFinancialRecord(doc: DocumentData): SerializableFinanc
         companyName: data.companyName || '',
         date: data.date?.toDate ? data.date.toDate().toISOString() : new Date().toISOString(),
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+        sourceAccountId: data.sourceAccountId,
     };
 }
 

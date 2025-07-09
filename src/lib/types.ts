@@ -1,3 +1,4 @@
+
 export type Contact = {
   id: string;
   name: string;
@@ -161,6 +162,7 @@ export type FinancialRecord = {
     companyId: string;
     companyName?: string;
     createdAt: any; // Firestore Timestamp
+    sourceAccountId?: string;
 };
 
 export type Account = {
@@ -216,6 +218,7 @@ export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidA
 export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {
     date: string;
     createdAt: string;
+    sourceAccountId?: string;
 };
 
 
