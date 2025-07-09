@@ -32,7 +32,7 @@ const dashboards = [
     title: "Financeiro",
     description: "Visão geral de fluxo de caixa, contas a pagar e a receber.",
     icon: DollarSign,
-    href: "/dashboard-financeiro",
+    href: "/dashboards/financeiro",
   },
 ];
 
