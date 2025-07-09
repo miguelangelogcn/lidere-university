@@ -87,7 +87,7 @@ export function ManageCreditCardsDialog({ company }: ManageCreditCardsDialogProp
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Cartão</TableHead>
-                                    <TableHead>Limite</TableHead>
+                                    <TableHead>Limite Disponível</TableHead>
                                     <TableHead>Vencimento</TableHead>
                                     <TableHead><span className="sr-only">Ações</span></TableHead>
                                 </TableRow>

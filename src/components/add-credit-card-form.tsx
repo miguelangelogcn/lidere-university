@@ -69,7 +69,7 @@ export function AddCreditCardForm({ company, onSuccess }: AddCreditCardFormProps
         )}/>
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="cardLimit" render={({ field }) => (
-            <FormItem><FormLabel>Limite (R$)</FormLabel><FormControl><Input type="number" placeholder="10000.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Limite Disponível (R$)</FormLabel><FormControl><Input type="number" placeholder="10000.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
           )}/>
           <FormField control={form.control} name="invoiceDueDate" render={({ field }) => (
             <FormItem><FormLabel>Dia do Vencimento</FormLabel><FormControl><Input type="number" placeholder="10" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
