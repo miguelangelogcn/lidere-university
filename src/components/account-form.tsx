@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,7 +21,6 @@ import { getCompanies } from '@/services/companyService';
 import { createAccount, updateAccount } from '@/services/accountsService';
 import type { Company, SerializableAccount } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { addMonths, addYears, addWeeks } from 'date-fns';
 
 
@@ -32,7 +32,7 @@ const accountSchema = z.object({
   dueDate: z.date({ required_error: 'A data de vencimento é obrigatória.' }),
   isRecurring: z.boolean().default(false),
   recurrence: z.object({
-    frequency: z.enum(['weekly', 'monthly', 'quarterly', 'semiannually', 'yearly']),
+    frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'quarterly', 'semiannually', 'yearly']),
     endDate: z.date().optional().nullable(),
   }).optional(),
   notes: z.string().optional(),
@@ -129,6 +129,9 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
                     case 'weekly':
                         currentDate = addWeeks(currentDate, 1);
                         break;
+                    case 'bi-weekly':
+                        currentDate = addWeeks(currentDate, 2);
+                        break;
                     case 'monthly':
                         currentDate = addMonths(currentDate, 1);
                         break;
@@ -213,49 +216,53 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
             <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Detalhes adicionais sobre a conta..." {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
         {!isEditing && (
-            <Collapsible><CollapsibleTrigger asChild>
-                <FormField control={form.control} name="isRecurring" render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <div className="space-y-1 leading-none"><FormLabel>É uma conta recorrente?</FormLabel>
-                        <FormDescription>Marque para criar múltiplas contas baseadas numa frequência.</FormDescription></div>
-                    </FormItem>
-                )}/>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="recurrence.frequency" render={({ field }) => (
-                        <FormItem><FormLabel>Frequência</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                <SelectItem value="weekly">Semanal</SelectItem>
-                                <SelectItem value="monthly">Mensal</SelectItem>
-                                <SelectItem value="quarterly">Trimestral</SelectItem>
-                                <SelectItem value="semiannually">Semestral</SelectItem>
-                                <SelectItem value="yearly">Anual</SelectItem>
-                            </SelectContent>
-                          </Select><FormMessage /></FormItem>
-                    )}/>
-                    <FormField control={form.control} name="recurrence.endDate" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>Data Final</FormLabel>
-                           <Popover><PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
-                                        {field.value ? format(field.value, 'PPP', { locale: ptBR }) : <span>Sem data final</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
-                            </PopoverContent></Popover>
-                           <FormDescription className="text-xs">Opcional. Se não definida, serão criadas por 5 anos.</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                    )}/>
-                </div>
-            </CollapsibleContent></Collapsible>
+          <>
+            <FormField control={form.control} name="isRecurring" render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <div className="space-y-1 leading-none"><FormLabel>É uma conta recorrente?</FormLabel>
+                    <FormDescription>Marque para criar múltiplas contas baseadas numa frequência.</FormDescription></div>
+                </FormItem>
+            )}/>
+
+            {isRecurring && (
+              <div className="space-y-4 pt-4 border-t p-4 rounded-b-md border-x border-b -mt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="recurrence.frequency" render={({ field }) => (
+                          <FormItem><FormLabel>Frequência</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                  <SelectItem value="weekly">Semanal</SelectItem>
+                                  <SelectItem value="bi-weekly">Quinzenal</SelectItem>
+                                  <SelectItem value="monthly">Mensal</SelectItem>
+                                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                                  <SelectItem value="semiannually">Semestral</SelectItem>
+                                  <SelectItem value="yearly">Anual</SelectItem>
+                              </SelectContent>
+                            </Select><FormMessage /></FormItem>
+                      )}/>
+                      <FormField control={form.control} name="recurrence.endDate" render={({ field }) => (
+                          <FormItem className="flex flex-col"><FormLabel>Data Final</FormLabel>
+                             <Popover><PopoverTrigger asChild>
+                                  <FormControl>
+                                      <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
+                                          {field.value ? format(field.value, 'PPP', { locale: ptBR }) : <span>Sem data final</span>}
+                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                  </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                              </PopoverContent></Popover>
+                             <FormDescription className="text-xs">Opcional. Se não definida, serão criadas por 5 anos.</FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                      )}/>
+                  </div>
+              </div>
+            )}
+          </>
         )}
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}

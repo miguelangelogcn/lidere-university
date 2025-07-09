@@ -182,7 +182,7 @@ export type Account = {
     status: 'pending' | 'paid';
     isRecurring: boolean;
     recurrence?: {
-        frequency: 'weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
+        frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
         endDate?: any | null; // Firestore Timestamp
     };
     notes?: string;
@@ -223,7 +223,7 @@ export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidA
     createdAt: string;
     paidAt?: string | null;
     recurrence?: {
-        frequency: 'weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
+        frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
         endDate?: string | null;
     };
 };
