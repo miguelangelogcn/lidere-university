@@ -19,7 +19,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getCompanies } from '@/services/companyService';
 import { createAccount, updateAccount } from '@/services/accountsService';
-import type { Company, SerializableAccount } from '@/lib/types';
+import { getCreditCardsByCompany } from '@/services/creditCardService';
+import type { Company, SerializableAccount, CreditCard } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { addMonths, addYears, addWeeks } from 'date-fns';
 
@@ -36,6 +37,16 @@ const accountSchema = z.object({
     endDate: z.date().optional().nullable(),
   }).optional(),
   notes: z.string().optional(),
+  isCreditCardExpense: z.boolean().default(false),
+  creditCardId: z.string().optional(),
+}).refine(data => {
+    if (data.isCreditCardExpense) {
+        return !!data.creditCardId;
+    }
+    return true;
+}, {
+    message: "Selecione um cartão de crédito.",
+    path: ["creditCardId"],
 });
 
 type AccountFormValues = z.infer<typeof accountSchema>;
@@ -68,13 +79,15 @@ const receivableCategories = [
 export function AccountForm({ accountType, account, onSuccess, scope = 'single' }: AccountFormProps) {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [loadingCards, setLoadingCards] = useState(false);
   
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       description: account?.description || '',
-      amount: account?.amount || undefined,
+      amount: account?.amount ?? '',
       companyId: account?.companyId || '',
       category: account?.category || '',
       dueDate: account?.dueDate ? new Date(account.dueDate) : undefined,
@@ -84,12 +97,17 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         endDate: account?.recurrence?.endDate ? new Date(account.recurrence.endDate) : undefined,
       },
       notes: account?.notes || '',
+      isCreditCardExpense: !!account?.creditCardId,
+      creditCardId: account?.creditCardId || '',
     },
   });
   
   const isRecurring = form.watch('isRecurring');
+  const isCreditCardExpense = form.watch('isCreditCardExpense');
+  const selectedCompanyId = form.watch('companyId');
   const isEditing = !!account;
   const categories = accountType === 'payable' ? payableCategories : receivableCategories;
+  const isPayable = accountType === 'payable';
 
   useEffect(() => {
     async function fetchCompanies() {
@@ -105,6 +123,27 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
     fetchCompanies();
   }, [toast]);
 
+  useEffect(() => {
+    if (!selectedCompanyId || !isPayable) {
+        setCreditCards([]);
+        form.setValue('creditCardId', undefined);
+        return;
+    }
+    
+    async function fetchCreditCards() {
+        setLoadingCards(true);
+        try {
+            const cardList = await getCreditCardsByCompany(selectedCompanyId);
+            setCreditCards(cardList);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao carregar cartões de crédito.' });
+        } finally {
+            setLoadingCards(false);
+        }
+    }
+    fetchCreditCards();
+  }, [selectedCompanyId, toast, isPayable, form]);
+
   const onSubmit = async (data: AccountFormValues) => {
     const company = companies.find(c => c.id === data.companyId);
     if (!company) {
@@ -112,20 +151,28 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         return;
     }
 
+    const submissionData: Partial<AccountFormValues> & { creditCardName?: string } = { ...data };
+
+    if (submissionData.isCreditCardExpense && submissionData.creditCardId) {
+        const card = creditCards.find(c => c.id === submissionData.creditCardId);
+        submissionData.creditCardName = card?.cardName;
+    } else {
+        submissionData.creditCardId = undefined;
+        submissionData.creditCardName = undefined;
+    }
+
     try {
       if (isEditing) {
-        // Update logic
-        await updateAccount(accountType, account.id, { ...data, companyName: company.name }, scope);
+        await updateAccount(accountType, account.id, { ...submissionData, companyName: company.name }, scope);
         toast({ title: "Sucesso!", description: "Conta(s) atualizada(s)." });
       } else {
-        // Create logic
-        const accountData = { ...data, companyName: company.name };
+        const accountData = { ...submissionData, companyName: company.name };
         
         if (data.isRecurring && data.recurrence?.frequency) {
-            await createAccount(accountType, accountData, true);
+            await createAccount(accountType, accountData as any, true);
             toast({ title: "Sucesso!", description: "Contas recorrentes criadas." });
         } else {
-             await createAccount(accountType, { ...accountData, dueDate: data.dueDate }, false);
+             await createAccount(accountType, { ...accountData, dueDate: data.dueDate } as any, false);
              toast({ title: "Sucesso!", description: "Conta criada." });
         }
       }
@@ -189,6 +236,54 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
                 </FormItem>
             )}/>
         </div>
+        {isPayable && (
+            <div className="space-y-4 rounded-md border p-4">
+                <FormField
+                    control={form.control}
+                    name="isCreditCardExpense"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                if (!checked) {
+                                    form.setValue('creditCardId', undefined);
+                                }
+                            }} /></FormControl>
+                            <div className="space-y-1 leading-none"><FormLabel>É uma despesa de cartão de crédito?</FormLabel></div>
+                        </FormItem>
+                    )}
+                />
+                {isCreditCardExpense && (
+                    <FormField
+                        control={form.control}
+                        name="creditCardId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Cartão de Crédito</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingCards || !selectedCompanyId}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={
+                                                loadingCards ? "Carregando cartões..." :
+                                                !selectedCompanyId ? "Selecione uma empresa primeiro" :
+                                                creditCards.length === 0 ? "Nenhum cartão cadastrado" :
+                                                "Selecione o cartão"
+                                            } />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {creditCards.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>{c.cardName} (**** {c.cardLastFourDigits})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+            </div>
+        )}
          <FormField control={form.control} name="notes" render={({ field }) => (
             <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Detalhes adicionais sobre a conta..." {...field} /></FormControl><FormMessage /></FormItem>
         )}/>

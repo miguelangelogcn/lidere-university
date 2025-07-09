@@ -23,6 +23,8 @@ function docToSerializableAccount(doc: DocumentData): SerializableAccount {
         isRecurring: data.isRecurring,
         recurrenceId: data.recurrenceId,
         notes: data.notes,
+        creditCardId: data.creditCardId,
+        creditCardName: data.creditCardName,
         dueDate: (data.dueDate as Timestamp).toDate().toISOString(),
         createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         paidAt: data.paidAt ? (data.paidAt as Timestamp).toDate().toISOString() : undefined,

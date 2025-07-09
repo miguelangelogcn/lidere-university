@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X, CreditCard } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -295,6 +295,13 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center gap-2">
                                                         {account.description}
+                                                        {account.creditCardId && (
+                                                            <TooltipProvider><Tooltip><TooltipTrigger>
+                                                                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                                            </TooltipTrigger><TooltipContent>
+                                                                <p>Cartão: {account.creditCardName || 'N/I'}</p>
+                                                            </TooltipContent></Tooltip></TooltipProvider>
+                                                        )}
                                                         {account.isRecurring && <TooltipProvider><Tooltip><TooltipTrigger><Repeat className="h-4 w-4 text-muted-foreground"/></TooltipTrigger><TooltipContent><p>Conta recorrente</p></TooltipContent></Tooltip></TooltipProvider>}
                                                     </div>
                                                 </TableCell>

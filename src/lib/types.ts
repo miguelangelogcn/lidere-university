@@ -7,6 +7,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -190,6 +191,8 @@ export type Account = {
     notes?: string;
     paidAt?: any | null; // Firestore Timestamp
     createdAt: any; // Firestore Timestamp
+    creditCardId?: string;
+    creditCardName?: string;
 }
 
 export type Debt = {
@@ -240,6 +243,8 @@ export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidA
         frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
         endDate?: string | null;
     };
+    creditCardId?: string;
+    creditCardName?: string;
 };
 
 export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {
