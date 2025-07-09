@@ -141,31 +141,31 @@ function FinancialDashboard() {
             const monthStart = month.date;
             const monthEnd = endOfMonth(monthStart);
 
-            if (isBefore(monthStart, today)) {
-                records
-                    .filter(r => {
-                        const recordDate = new Date(r.date);
-                        return recordDate >= monthStart && recordDate <= monthEnd;
-                    })
-                    .forEach(r => {
-                        if (r.type === 'income') month.inflow += r.amount;
-                        else month.outflow += r.amount;
-                    });
-            } else {
-                receivables
-                    .filter(r => {
-                        const dueDate = new Date(r.dueDate);
-                        return r.status === 'pending' && dueDate >= monthStart && dueDate <= monthEnd;
-                    })
-                    .forEach(r => month.inflow += r.amount);
+            // Use actual records for past months
+            records
+                .filter(r => {
+                    const recordDate = new Date(r.date);
+                    return recordDate >= monthStart && recordDate <= monthEnd;
+                })
+                .forEach(r => {
+                    if (r.type === 'income') month.inflow += r.amount;
+                    else month.outflow += r.amount;
+                });
+            
+            // Use pending accounts for future months (and current month)
+            receivables
+                .filter(r => {
+                    const dueDate = new Date(r.dueDate);
+                    return r.status === 'pending' && dueDate >= monthStart && dueDate <= monthEnd;
+                })
+                .forEach(r => month.inflow += r.amount);
 
-                payables
-                    .filter(p => {
-                        const dueDate = new Date(p.dueDate);
-                        return p.status === 'pending' && dueDate >= monthStart && dueDate <= monthEnd;
-                    })
-                    .forEach(p => month.outflow += p.amount);
-            }
+            payables
+                .filter(p => {
+                    const dueDate = new Date(p.dueDate);
+                    return p.status === 'pending' && dueDate >= monthStart && dueDate <= monthEnd;
+                })
+                .forEach(p => month.outflow += p.amount);
         });
 
         let runningBalance = initialBalance;
