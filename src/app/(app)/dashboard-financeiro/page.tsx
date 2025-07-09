@@ -56,6 +56,8 @@ export default function DashboardFinanceiroPage() {
   const [date, setDate] = useState<DateRange | undefined>();
 
   useEffect(() => {
+    // This effect runs once on mount to set the initial date range.
+    // It's safe because it doesn't depend on server-rendered values.
     setDate({
         from: startOfMonth(new Date()),
         to: endOfMonth(addMonths(new Date(), 11)),
@@ -267,7 +269,7 @@ export default function DashboardFinanceiroPage() {
                     </Card>
                 ))}
             </div>
-
+            
             <Card>
               <CardHeader>
                   <CardTitle>Empresa</CardTitle>
