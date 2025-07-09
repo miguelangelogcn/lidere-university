@@ -22,10 +22,7 @@ import { createAccount, updateAccount } from '@/services/accountsService';
 import { getCreditCardsByCompany } from '@/services/creditCardService';
 import type { Company, SerializableAccount, CreditCard } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
-import { calculateTaxForPeriod } from '@/lib/actions/taxActions';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { Card, CardContent } from '@/components/ui/card';
-
 
 const baseSchema = z.object({
   description: z.string().min(1, 'A descrição é obrigatória.'),
@@ -51,9 +48,7 @@ const standardAccountSchema = baseSchema.extend({
 
 const taxAccountSchema = baseSchema.extend({
     isCalculatedTax: z.literal(true),
-    amount: z.number().optional(),
-    calculationMonth: z.string().min(1, 'O mês é obrigatório.'),
-    calculationYear: z.string().min(1, 'O ano é obrigatório.'),
+    amount: z.number().optional(), // Amount is not needed from form
 });
 
 const accountSchema = z.discriminatedUnion("isCalculatedTax", [standardAccountSchema, taxAccountSchema]).refine(data => {
@@ -95,7 +90,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [loadingCards, setLoadingCards] = useState(false);
-  const [taxCalculation, setTaxCalculation] = useState<{ isLoading: boolean, amount: number | null, error: string | null }>({ isLoading: false, amount: null, error: null });
   
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
@@ -131,8 +125,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
   const isRecurring = form.watch('isRecurring');
   const isCreditCardExpense = form.watch('isCreditCardExpense');
   const selectedCompanyId = form.watch('companyId');
-  const calculationMonth = form.watch('calculationMonth' as 'isCalculatedTax');
-  const calculationYear = form.watch('calculationYear' as 'isCalculatedTax');
 
   const isEditing = !!account;
   const categories = accountType === 'payable' ? payableCategories : receivableCategories;
@@ -180,30 +172,8 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
     useEffect(() => {
         if (isCalculatedTax) {
             form.setValue('category', 'Impostos e Taxas');
-            form.setValue('isRecurring', false);
         }
     }, [isCalculatedTax, form]);
-
-    useEffect(() => {
-        if (isCalculatedTax && selectedCompanyId && calculationMonth && calculationYear) {
-            const runCalculation = async () => {
-                setTaxCalculation({ isLoading: true, amount: null, error: null });
-                const yearNum = parseInt(calculationYear);
-                const monthNum = parseInt(calculationMonth);
-
-                const result = await calculateTaxForPeriod(selectedCompanyId, yearNum, monthNum);
-                
-                if (result.success) {
-                    setTaxCalculation({ isLoading: false, amount: result.taxAmount, error: null });
-                    const monthName = new Date(yearNum, monthNum - 1).toLocaleString('pt-BR', { month: 'long' });
-                    form.setValue('description', `Imposto sobre Faturamento - ${monthName}/${yearNum}`);
-                } else {
-                    setTaxCalculation({ isLoading: false, amount: null, error: result.message || 'Falha ao calcular.' });
-                }
-            };
-            runCalculation();
-        }
-    }, [isCalculatedTax, selectedCompanyId, calculationMonth, calculationYear, form]);
 
 
   const onSubmit = async (data: AccountFormValues) => {
@@ -214,16 +184,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
     }
 
     let submissionData: Partial<AccountFormValues> & { creditCardName?: string, amount?: number } = { ...data };
-
-    if (data.isCalculatedTax) {
-        if (taxCalculation.amount === null || taxCalculation.amount < 0) {
-            toast({ variant: 'destructive', title: 'Valor Inválido', description: 'O valor do imposto não foi calculado ou é inválido.'});
-            return;
-        }
-        submissionData.amount = taxCalculation.amount;
-        submissionData.category = 'Impostos e Taxas';
-    }
-
 
     if (submissionData.isCreditCardExpense && submissionData.creditCardId) {
         const card = creditCards.find(c => c.id === submissionData.creditCardId);
@@ -238,13 +198,13 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         await updateAccount(account.id, { ...submissionData, companyName: company.name }, scope);
         toast({ title: "Sucesso!", description: "Conta(s) atualizada(s)." });
       } else {
-        const accountData = { ...submissionData, companyName: company.name };
+        const accountData: any = { ...submissionData, companyName: company.name, isCalculatedTax };
         
         if (data.isRecurring && data.recurrence?.frequency) {
-            await createAccount(accountType, accountData as any, true);
+            await createAccount(accountType, accountData, true);
             toast({ title: "Sucesso!", description: "Contas recorrentes criadas." });
         } else {
-             await createAccount(accountType, { ...accountData, dueDate: data.dueDate } as any, false);
+             await createAccount(accountType, { ...accountData, dueDate: data.dueDate }, false);
              toast({ title: "Sucesso!", description: "Conta criada." });
         }
       }
@@ -253,10 +213,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
       toast({ variant: "destructive", title: "Erro!", description: err.message || 'Falha ao salvar conta.' });
     }
   };
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
-  const months = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: format(new Date(0, i), 'MMMM', { locale: ptBR }) }));
   
   return (
      <Form {...form}>
@@ -272,11 +228,19 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         )}
 
         <FormField control={form.control} name="description" render={({ field }) => (
-            <FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Ex: Aluguel do escritório" {...field} disabled={isCalculatedTax} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Descrição</FormLabel><FormControl><Input placeholder="Ex: Aluguel do escritório" {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
         
-        {!isCalculatedTax && (
-            <FormField control={form.control} name="amount" render={({ field }) => (
+        {isCalculatedTax ? (
+            <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Cálculo Automático de Imposto</AlertTitle>
+                <AlertDescription>
+                    O valor será calculado com base no faturamento e alíquotas do mês anterior à data de vencimento. Salve a conta para ver o valor.
+                </AlertDescription>
+            </Alert>
+        ) : (
+             <FormField control={form.control} name="amount" render={({ field }) => (
                 <FormItem><FormLabel>Valor (R$)</FormLabel><FormControl><Input type="number" placeholder="1500.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></FormControl><FormMessage /></FormItem>
             )}/>
         )}
@@ -307,37 +271,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
             )}/>
         </div>
 
-        {isCalculatedTax ? (
-            <Card className="bg-muted/50">
-                <CardContent className="pt-6 space-y-4">
-                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="calculationMonth" render={({ field }) => (
-                            <FormItem><FormLabel>Mês da Apuração</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Mês" /></SelectTrigger></FormControl>
-                                    <SelectContent>{months.map(m => (<SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>))}</SelectContent>
-                                </Select><FormMessage />
-                            </FormItem>
-                        )}/>
-                        <FormField control={form.control} name="calculationYear" render={({ field }) => (
-                            <FormItem><FormLabel>Ano da Apuração</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Ano" /></SelectTrigger></FormControl>
-                                    <SelectContent>{years.map(y => (<SelectItem key={y} value={String(y)}>{y}</SelectItem>))}</SelectContent>
-                                </Select><FormMessage />
-                            </FormItem>
-                        )}/>
-                    </div>
-                    {taxCalculation.isLoading && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/> Calculando...</div>}
-                    {taxCalculation.error && <p className="text-sm text-destructive">{taxCalculation.error}</p>}
-                    {taxCalculation.amount !== null && !taxCalculation.isLoading && (
-                        <Alert>
-                            <Info className="h-4 w-4" />
-                            <AlertTitle>Valor Calculado</AlertTitle>
-                            <AlertDescription>O valor do imposto a pagar para este período é de <span className="font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(taxCalculation.amount)}</span>.</AlertDescription>
-                        </Alert>
-                    )}
-                </CardContent>
-            </Card>
-        ) : (
+        {!isCalculatedTax && (
             <>
                 <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="category" render={({ field }) => (
@@ -437,12 +371,12 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
             <FormDescription>A edição de recorrência não está disponível para contas recorrentes. Para alterar, exclua e crie a série novamente.</FormDescription>
         )}
         
-        {(!isEditing && !isCalculatedTax) && (
+        {(!isEditing || isCalculatedTax) && (
           <>
             <FormField control={form.control} name="isRecurring" render={({ field }) => (
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isCalculatedTax && isEditing} />
                     </FormControl>
                     <div className="space-y-1 leading-none"><FormLabel>É uma conta recorrente?</FormLabel>
                     <FormDescription>Marque para criar múltiplas contas baseadas numa frequência.</FormDescription></div>
@@ -489,7 +423,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
           </>
         )}
         
-        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting || (isCalculatedTax && taxCalculation.amount === null)}>
+        <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
           {isEditing ? 'Salvar Alterações' : 'Criar Conta(s)'}
         </Button>

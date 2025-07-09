@@ -4,7 +4,7 @@
 import { db } from '@/lib/firebase';
 import type { Account, SerializableAccount } from '@/lib/types';
 import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, type DocumentData, orderBy, query, where, Timestamp, writeBatch, getDoc } from 'firebase/firestore';
-import { addWeeks, addMonths, addYears } from 'date-fns';
+import { addWeeks, addMonths, addYears, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 const getCollection = (type: 'payable' | 'receivable') => {
     return collection(db, type === 'payable' ? 'contas-a-pagar' : 'contas-a-receber');
@@ -74,30 +74,63 @@ export async function getPaidReceivablesForPeriod(companyId: string, startDate: 
     }
 }
 
-export async function createAccount(type: 'payable' | 'receivable', data: Partial<Account>, isSeries: boolean): Promise<string> {
+async function calculateTaxForCompanyPeriod(companyId: string, year: number, month: number): Promise<number> {
+    const startDate = startOfMonth(new Date(year, month - 1, 1));
+    const endDate = endOfMonth(new Date(year, month - 1, 1));
+
+    const paidReceivables = await getPaidReceivablesForPeriod(companyId, startDate, endDate);
+
+    if (paidReceivables.length === 0) {
+        return 0;
+    }
+
+    const totalTax = paidReceivables.reduce((acc, r) => {
+        const tax = r.taxRate ? (r.amount * r.taxRate) / 100 : 0;
+        return acc + tax;
+    }, 0);
+
+    return totalTax;
+}
+
+export async function createAccount(type: 'payable' | 'receivable', data: Partial<Account> & { isCalculatedTax?: boolean }, isSeries: boolean): Promise<string> {
     const coll = getCollection(type);
     const batch = writeBatch(db);
+    
+    const { isCalculatedTax, ...accountDataRest } = data;
     
     if (isSeries && data.isRecurring && data.recurrence?.frequency) {
         const recurrenceId = doc(collection(db, 'random')).id;
         let currentDate = new Date(data.dueDate as any);
-        const endDate = data.recurrence.endDate ? new Date(data.recurrence.endDate as any) : addYears(currentDate, 5); // Limit to 5 years
+        const endDate = data.recurrence.endDate ? new Date(data.recurrence.endDate as any) : addYears(currentDate, 5);
 
         while (currentDate <= endDate) {
-            const newDocRef = doc(coll);
-            const accountData: any = {
-                ...data,
-                status: 'pending',
-                paidAt: null,
-                recurrenceId: recurrenceId,
-                dueDate: Timestamp.fromDate(currentDate),
-                expectedPaymentDate: data.expectedPaymentDate ? Timestamp.fromDate(new Date(data.expectedPaymentDate as any)) : null,
-                createdAt: Timestamp.now(),
-            };
-            if(accountData.recurrence?.endDate) {
-                accountData.recurrence.endDate = Timestamp.fromDate(new Date(accountData.recurrence.endDate as any));
+            let finalAmount = data.amount;
+
+            if (isCalculatedTax) {
+                const calculationDate = subMonths(currentDate, 1);
+                const year = calculationDate.getFullYear();
+                const month = calculationDate.getMonth() + 1;
+                finalAmount = await calculateTaxForCompanyPeriod(data.companyId!, year, month);
             }
-            batch.set(newDocRef, accountData);
+            
+            if (finalAmount && finalAmount > 0) {
+                const newDocRef = doc(coll);
+                const accountData: any = {
+                    ...accountDataRest,
+                    amount: finalAmount,
+                    category: isCalculatedTax ? 'Impostos e Taxas' : data.category,
+                    status: 'pending',
+                    paidAt: null,
+                    recurrenceId: recurrenceId,
+                    dueDate: Timestamp.fromDate(currentDate),
+                    expectedPaymentDate: data.expectedPaymentDate ? Timestamp.fromDate(new Date(data.expectedPaymentDate as any)) : null,
+                    createdAt: Timestamp.now(),
+                };
+                if(accountData.recurrence?.endDate) {
+                    accountData.recurrence.endDate = Timestamp.fromDate(new Date(accountData.recurrence.endDate as any));
+                }
+                batch.set(newDocRef, accountData);
+            }
 
             switch (data.recurrence.frequency) {
                 case 'weekly': currentDate = addWeeks(currentDate, 1); break;
@@ -111,9 +144,27 @@ export async function createAccount(type: 'payable' | 'receivable', data: Partia
         await batch.commit();
         return recurrenceId;
     } else {
+        let finalAmount = data.amount;
+        if (isCalculatedTax) {
+             const calculationDate = subMonths(new Date(data.dueDate as any), 1);
+             const year = calculationDate.getFullYear();
+             const month = calculationDate.getMonth() + 1;
+             finalAmount = await calculateTaxForCompanyPeriod(data.companyId!, year, month);
+        }
+
+        if (!finalAmount || finalAmount <= 0) {
+            if (isCalculatedTax) {
+                console.log("Tax amount is zero or less, not creating account.");
+                return ''; // Don't create if there's no tax to pay
+            }
+            throw new Error("O valor da conta deve ser positivo.");
+        }
+
         const newDocRef = doc(coll);
         const accountData: any = {
-            ...data,
+            ...accountDataRest,
+            amount: finalAmount,
+            category: isCalculatedTax ? 'Impostos e Taxas' : data.category,
             status: 'pending',
             paidAt: null,
             createdAt: Timestamp.now(),
