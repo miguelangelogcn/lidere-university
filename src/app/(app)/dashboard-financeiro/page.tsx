@@ -1,3 +1,4 @@
+
 'use client';
 
 import { MainHeader } from "@/components/main-header";
@@ -19,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
+import { DreKpiCards } from "@/components/dre-kpi-cards";
 
 function CashFlowProjectionChart({ data }: { data: { name: string, balance: number }[] }) {
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -44,7 +46,6 @@ function CashFlowProjectionChart({ data }: { data: { name: string, balance: numb
 }
 
 export default function DashboardFinanceiroPage() {
-  // State and logic for the financial dashboard
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,9 +54,8 @@ export default function DashboardFinanceiroPage() {
       receivables: SerializableAccount[];
       payables: SerializableAccount[];
   } | null>(null);
-  const [date, setDate] = useState<DateRange | undefined>(); // Initialize as undefined
+  const [date, setDate] = useState<DateRange | undefined>();
 
-  // Set initial date range on client to avoid hydration mismatch
   useEffect(() => {
     setDate({
         from: startOfMonth(new Date()),
@@ -111,6 +111,38 @@ export default function DashboardFinanceiroPage() {
       }
       fetchCompanyData();
   }, [selectedCompanyId]);
+
+  const dreKpiData = useMemo(() => {
+    if (!financialData || !date?.from) {
+        return { grossRevenue: 0, totalExpenses: 0, grossProfit: 0, profitMargin: 0 };
+    }
+
+    const { records } = financialData;
+    const from = date.from;
+    const to = date.to ?? from;
+    const toEndOfDay = new Date(to);
+    toEndOfDay.setHours(23, 59, 59, 999);
+
+    const filteredRecords = records.filter(r => {
+        const recordDate = new Date(r.date);
+        return recordDate >= from && recordDate <= toEndOfDay;
+    });
+
+    const grossRevenue = filteredRecords
+        .filter(r => r.type === 'income')
+        .reduce((acc, r) => acc + r.amount, 0);
+
+    const totalExpenses = filteredRecords
+        .filter(r => r.type === 'expense')
+        .reduce((acc, r) => acc + r.amount, 0);
+        
+    const grossProfit = grossRevenue - totalExpenses;
+
+    const profitMargin = grossRevenue > 0 ? (grossProfit / grossRevenue) * 100 : 0;
+    
+    return { grossRevenue, totalExpenses, grossProfit, profitMargin };
+  }, [financialData, date]);
+
 
   const projectionData = useMemo(() => {
     if (!financialData || !date?.from || !selectedCompanyId) return [];
@@ -190,7 +222,8 @@ export default function DashboardFinanceiroPage() {
       <>
         <MainHeader title="Dashboard Financeiro" />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <Card>
+            <DreKpiCards {...dreKpiData} />
+            <Card>
               <CardHeader>
                   <CardTitle>Empresa</CardTitle>
                   <CardDescription>Selecione a empresa para visualizar o dashboard.</CardDescription>
@@ -209,9 +242,9 @@ export default function DashboardFinanceiroPage() {
                       <Skeleton className="h-10 w-[300px]" />
                   )}
               </CardContent>
-          </Card>
+            </Card>
 
-          <Card>
+            <Card>
               <CardHeader>
                   <CardTitle>Filtro de Período</CardTitle>
                   <CardDescription>Selecione o período para visualizar o fluxo de caixa.</CardDescription>
@@ -270,9 +303,9 @@ export default function DashboardFinanceiroPage() {
                       </div>
                   </div>
               </CardContent>
-          </Card>
+            </Card>
 
-          <Card>
+            <Card>
               <CardHeader>
                   <CardTitle>Projeção de Fluxo de Caixa</CardTitle>
                   <CardDescription>Visão do saldo da conta baseado em transações passadas e contas futuras.</CardDescription>
@@ -292,7 +325,7 @@ export default function DashboardFinanceiroPage() {
                       )
                   )}
               </CardContent>
-          </Card>
+            </Card>
         </main>
       </>
   )
