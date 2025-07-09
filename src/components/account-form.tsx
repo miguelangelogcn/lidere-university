@@ -22,7 +22,6 @@ import { createAccount, updateAccount } from '@/services/accountsService';
 import { getCreditCardsByCompany } from '@/services/creditCardService';
 import type { Company, SerializableAccount, CreditCard } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
-import { addMonths, addYears, addWeeks } from 'date-fns';
 
 
 const accountSchema = z.object({
@@ -31,8 +30,7 @@ const accountSchema = z.object({
   companyId: z.string().min(1, 'A empresa é obrigatória.'),
   category: z.string().optional(),
   dueDate: z.date({ required_error: 'A data de vencimento é obrigatória.' }),
-  status: z.enum(['pending', 'paid']).default('pending'),
-  paidAt: z.date().optional().nullable(),
+  expectedPaymentDate: z.date().optional().nullable(),
   isRecurring: z.boolean().default(false),
   recurrence: z.object({
     frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'quarterly', 'semiannually', 'yearly']),
@@ -42,14 +40,6 @@ const accountSchema = z.object({
   isCreditCardExpense: z.boolean().default(false),
   creditCardId: z.string().optional(),
   taxRate: z.coerce.number().min(0, "A alíquota não pode ser negativa.").optional(),
-}).refine(data => {
-    if (data.status === 'paid' && !data.paidAt) {
-        return false;
-    }
-    return true;
-}, {
-    message: "A data de recebimento/pagamento é obrigatória se o status for 'Pago' ou 'Recebido'.",
-    path: ["paidAt"],
 }).refine(data => {
     if (data.isCreditCardExpense) {
         return !!data.creditCardId;
@@ -102,8 +92,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
       companyId: account?.companyId || '',
       category: account?.category || '',
       dueDate: account?.dueDate ? new Date(account.dueDate) : undefined,
-      status: account?.status || 'pending',
-      paidAt: account?.paidAt ? new Date(account.paidAt) : null,
+      expectedPaymentDate: account?.expectedPaymentDate ? new Date(account.expectedPaymentDate) : null,
       isRecurring: account?.isRecurring || false,
       recurrence: {
         frequency: account?.recurrence?.frequency || 'monthly',
@@ -119,7 +108,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
   const isRecurring = form.watch('isRecurring');
   const isCreditCardExpense = form.watch('isCreditCardExpense');
   const selectedCompanyId = form.watch('companyId');
-  const status = form.watch('status');
   const isEditing = !!account;
   const categories = accountType === 'payable' ? payableCategories : receivableCategories;
   const isPayable = accountType === 'payable';
@@ -177,15 +165,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         submissionData.creditCardName = undefined;
     }
     
-    if (submissionData.status === 'pending') {
-        submissionData.paidAt = null;
-    }
-    
-    if (isRecurring) {
-        submissionData.status = 'pending';
-        submissionData.paidAt = null;
-    }
-
     try {
       if (isEditing) {
         await updateAccount(accountType, account.id, { ...submissionData, companyName: company.name }, scope);
@@ -262,6 +241,24 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
             )}/>
         </div>
         
+        <FormField control={form.control} name="expectedPaymentDate" render={({ field }) => (
+            <FormItem className="flex flex-col"><FormLabel>Data Prevista de Recebimento</FormLabel>
+                <Popover><PopoverTrigger asChild>
+                    <FormControl>
+                        <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
+                            {field.value ? format(field.value, 'PPP', { locale: ptBR }) : <span>Escolha uma data (opcional)</span>}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                </PopoverContent></Popover>
+                <FormDescription className="text-xs">Data em que o valor efetivamente entrará na conta.</FormDescription>
+                <FormMessage />
+            </FormItem>
+        )}/>
+
         {isReceivable && (
             <FormField control={form.control} name="taxRate" render={({ field }) => (
                 <FormItem><FormLabel>Alíquota de Imposto (%)</FormLabel><FormControl><Input type="number" placeholder="5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></FormControl><FormDescription>Informe a alíquota de imposto (ex: 5 para 5%) que incide sobre esta receita. Opcional.</FormDescription><FormMessage /></FormItem>
@@ -321,7 +318,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
         )}/>
         
         {isEditing && account.isRecurring && (
-            <FormDescription>A edição de recorrência e status não está disponível para contas recorrentes. Para alterar, exclua e crie a série novamente ou marque como paga na listagem.</FormDescription>
+            <FormDescription>A edição de recorrência não está disponível para contas recorrentes. Para alterar, exclua e crie a série novamente.</FormDescription>
         )}
         
         {(!isEditing) && (
@@ -331,13 +328,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
                     <FormControl>
                       <Checkbox 
                         checked={field.value} 
-                        onCheckedChange={(checked) => {
-                           field.onChange(checked);
-                           if (checked) {
-                               form.setValue('status', 'pending');
-                               form.setValue('paidAt', null);
-                           }
-                        }} />
+                        onCheckedChange={field.onChange} />
                     </FormControl>
                     <div className="space-y-1 leading-none"><FormLabel>É uma conta recorrente?</FormLabel>
                     <FormDescription>Marque para criar múltiplas contas baseadas numa frequência.</FormDescription></div>
@@ -384,62 +375,6 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
           </>
         )}
         
-         {(!isRecurring && (!isEditing || !account?.isRecurring)) && (
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={(value) => {
-                        field.onChange(value);
-                        if (value === 'paid' && !form.getValues('paidAt')) {
-                            form.setValue('paidAt', new Date(), { shouldValidate: true });
-                        }
-                    }} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="paid">{isPayable ? 'Pago' : 'Recebido'}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                {status === 'paid' && (
-                <FormField
-                    control={form.control}
-                    name="paidAt"
-                    render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel>{isPayable ? 'Data do Pagamento' : 'Data do Recebimento'}</FormLabel>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                            <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !field.value && 'text-muted-foreground')}>
-                                {field.value ? format(field.value, 'PPP', { locale: ptBR }) : <span>Escolha uma data</span>}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
-                        </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                )}
-            </div>
-        )}
-
         <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
           {isEditing ? 'Salvar Alterações' : 'Criar Conta(s)'}

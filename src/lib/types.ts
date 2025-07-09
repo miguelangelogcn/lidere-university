@@ -168,6 +168,7 @@ export type Account = {
     description: string;
     amount: number;
     dueDate: any; // Firestore Timestamp
+    expectedPaymentDate?: any | null; // Firestore Timestamp
     category?: string;
     companyId: string;
     companyName?: string;
@@ -197,11 +198,12 @@ export type CreditCard = {
 
 export type SerializableCreditCard = CreditCard;
 
-export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence'> & {
+export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence' | 'expectedPaymentDate'> & {
     dueDate: string;
     createdAt: string;
     recurrenceId?: string;
     paidAt?: string | null;
+    expectedPaymentDate?: string | null;
     recurrence?: {
         frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
         endDate?: string | null;

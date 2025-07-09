@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -433,7 +434,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                     <TableHead>Valor</TableHead>
                                     <TableHead>Categoria</TableHead>
                                     <TableHead>Vencimento</TableHead>
-                                    <TableHead>Status</TableHead>
+                                    <TableHead>Recebimento Previsto</TableHead>
                                     <TableHead><span className="sr-only">Ações</span></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -462,9 +463,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                                 <TableCell>{account.category || 'N/A'}</TableCell>
                                                 <TableCell className={isOverdue ? 'text-destructive font-semibold' : ''}>{format(new Date(account.dueDate), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={account.status === 'paid' ? 'secondary' : 'outline'}>
-                                                        {account.status === 'paid' ? (isPayable ? 'Pago' : 'Recebido') : 'Pendente'}
-                                                    </Badge>
+                                                    {account.expectedPaymentDate ? format(new Date(account.expectedPaymentDate), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                                                 </TableCell>
                                                 <TableCell>
                                                     
