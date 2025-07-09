@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -156,7 +157,7 @@ export async function deleteAccount(type: 'payable' | 'receivable', id: string, 
     }
     
     const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return; // Already deleted, perhaps?
+    if (!docSnap.exists()) return;
 
     const currentAccount = docSnap.data() as Account;
     const { recurrenceId, dueDate: currentDueDate } = currentAccount;
@@ -166,14 +167,27 @@ export async function deleteAccount(type: 'payable' | 'receivable', id: string, 
         return;
     }
 
-    const q = query(coll, where('recurrenceId', '==', recurrenceId), where('dueDate', '>=', currentDueDate));
+    // Query only by recurrenceId to avoid needing a composite index.
+    const q = query(coll, where('recurrenceId', '==', recurrenceId));
     const snapshot = await getDocs(q);
     
-    if(snapshot.empty) return;
+    if (snapshot.empty) {
+        // Fallback: if no recurring docs are found, just delete the single one.
+        await deleteDoc(docRef);
+        return;
+    }
 
     const batch = writeBatch(db);
+    const comparisonDate = (currentDueDate as Timestamp).toDate();
+
     snapshot.docs.forEach(docToDelete => {
-        batch.delete(docToDelete.ref);
+        const accountData = docToDelete.data() as Account;
+        const accountDueDate = (accountData.dueDate as Timestamp).toDate();
+
+        // Filter by date in code
+        if (accountDueDate >= comparisonDate) {
+            batch.delete(docToDelete.ref);
+        }
     });
 
     await batch.commit();
