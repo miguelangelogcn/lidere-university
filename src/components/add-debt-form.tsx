@@ -95,10 +95,10 @@ export function AddDebtForm({ onSuccess }: AddDebtFormProps) {
             )}/>
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="totalAmount" render={({ field }) => (
-                    <FormItem><FormLabel>Valor Total (R$)</FormLabel><FormControl><Input type="number" placeholder="50000.00" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Valor Total (R$)</FormLabel><FormControl><Input type="number" placeholder="50000.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="interestRate" render={({ field }) => (
-                    <FormItem><FormLabel>Taxa de Juros Anual (%)</FormLabel><FormControl><Input type="number" placeholder="12" {...field} /></FormControl><FormDescription className="text-xs">Ex: 12 para 12% a.a.</FormDescription><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Taxa de Juros Anual (%)</FormLabel><FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ''} /></FormControl><FormDescription className="text-xs">Ex: 12 para 12% a.a.</FormDescription><FormMessage /></FormItem>
                 )}/>
             </div>
             
@@ -112,7 +112,7 @@ export function AddDebtForm({ onSuccess }: AddDebtFormProps) {
             {isInstallment && (
                 <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="totalInstallments" render={({ field }) => (
-                        <FormItem><FormLabel>Nº de Parcelas</FormLabel><FormControl><Input type="number" placeholder="12" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Nº de Parcelas</FormLabel><FormControl><Input type="number" placeholder="12" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="firstDueDate" render={({ field }) => (
                         <FormItem className="flex flex-col"><FormLabel>Data da 1ª Parcela</FormLabel>
