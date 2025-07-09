@@ -181,6 +181,7 @@ export type Account = {
     companyName?: string;
     status: 'pending' | 'paid';
     isRecurring: boolean;
+    recurrenceId?: string;
     recurrence?: {
         frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';
         endDate?: any | null; // Firestore Timestamp
@@ -221,6 +222,7 @@ export type SerializableDebt = Omit<Debt, 'createdAt' | 'negotiationDetails'> & 
 export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence'> & {
     dueDate: string;
     createdAt: string;
+    recurrenceId?: string;
     paidAt?: string | null;
     recurrence?: {
         frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'semiannually' | 'yearly';

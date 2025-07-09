@@ -35,6 +35,9 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isScopeDialogOpen, setIsScopeDialogOpen] = useState(false);
+    const [scopeAction, setScopeAction] = useState<'edit' | 'delete' | null>(null);
+    const [selectedScope, setSelectedScope] = useState<'single' | 'future'>('single');
     const [accountForAction, setAccountForAction] = useState<SerializableAccount | null>(null);
     const { toast } = useToast();
     const [date, setDate] = useState<DateRange | undefined>({
@@ -81,7 +84,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
     
     const handleMarkAsPaid = async (account: SerializableAccount) => {
         try {
-            await updateAccount(accountType, account.id, { status: 'paid', paidAt: new Date() });
+            await updateAccount(accountType, account.id, { status: 'paid', paidAt: new Date() }, 'single');
             toast({ title: 'Sucesso!', description: `Conta marcada como ${accountType === 'payable' ? 'paga' : 'recebida'}.` });
             fetchData();
         } catch (error) {
@@ -89,11 +92,11 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
         }
     };
 
-    const handleDeleteAccount = async () => {
+    const handleDeleteAccount = async (scope: 'single' | 'future') => {
         if (!accountForAction) return;
         try {
-            await deleteAccount(accountType, accountForAction.id);
-            toast({ title: 'Sucesso', description: 'Conta excluída.' });
+            await deleteAccount(accountType, accountForAction.id, scope);
+            toast({ title: 'Sucesso', description: 'Conta(s) excluída(s).' });
             fetchData();
         } catch (error) {
              toast({ variant: 'destructive', title: 'Erro', description: 'Falha ao excluir a conta.' });
@@ -128,6 +131,32 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
             totalOverdue: overdue.reduce((acc, r) => acc + r.amount, 0)
         };
     }, [dateFilteredAccounts]);
+
+    const handleActionClick = (action: 'edit' | 'delete', account: SerializableAccount) => {
+        setAccountForAction(account);
+        if (account.isRecurring) {
+            setScopeAction(action);
+            setIsScopeDialogOpen(true);
+        } else {
+            if (action === 'edit') {
+                setSelectedScope('single');
+                setIsFormOpen(true);
+            } else {
+                setIsDeleteDialogOpen(true);
+            }
+        }
+    };
+
+    const handleConfirmScope = (scope: 'single' | 'future') => {
+        setIsScopeDialogOpen(false);
+        if (scopeAction === 'edit') {
+            setSelectedScope(scope);
+            setIsFormOpen(true);
+        } else if (scopeAction === 'delete') {
+            setIsDeleteDialogOpen(true);
+            setSelectedScope(scope);
+        }
+    };
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -237,7 +266,7 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                     <DialogTitle>{accountForAction ? 'Editar' : 'Adicionar'} Conta {isPayable ? 'a Pagar' : 'a Receber'}</DialogTitle>
                                     <DialogDescription>Preencha os detalhes da {isPayable ? 'despesa' : 'receita'}.</DialogDescription>
                                 </DialogHeader>
-                                <AccountForm accountType={accountType} account={accountForAction} onSuccess={handleSuccess} />
+                                <AccountForm accountType={accountType} account={accountForAction} onSuccess={handleSuccess} scope={selectedScope} />
                             </DialogContent>
                         </Dialog>
                     </div>
@@ -278,17 +307,17 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {account.status === 'pending' && (
+                                                    
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal /></Button></DropdownMenuTrigger>
                                                             <DropdownMenuContent>
                                                                 <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                                <DropdownMenuItem onSelect={() => handleMarkAsPaid(account)}><Check className="mr-2 h-4 w-4"/> Marcar como {isPayable ? 'Paga' : 'Recebida'}</DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => {setAccountForAction(account); setIsFormOpen(true);}}>Editar</DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-destructive" onSelect={() => {setAccountForAction(account); setIsDeleteDialogOpen(true);}}>Excluir</DropdownMenuItem>
+                                                                {account.status === 'pending' && <DropdownMenuItem onSelect={() => handleMarkAsPaid(account)}><Check className="mr-2 h-4 w-4"/> Marcar como {isPayable ? 'Paga' : 'Recebida'}</DropdownMenuItem>}
+                                                                <DropdownMenuItem onSelect={() => handleActionClick('edit', account)}>Editar</DropdownMenuItem>
+                                                                <DropdownMenuItem className="text-destructive" onSelect={() => handleActionClick('delete', account)}>Excluir</DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
-                                                    )}
+                                                    
                                                 </TableCell>
                                             </TableRow>
                                         )
@@ -306,11 +335,27 @@ const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>Esta ação irá excluir a conta: <span className="font-bold">{accountForAction?.description}</span>.</AlertDialogDescription>
+                        <AlertDialogDescription>Esta ação irá excluir a conta: <span className="font-bold">{accountForAction?.description}</span>. {selectedScope === 'future' && 'Todas as ocorrências futuras também serão excluídas.'}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleDeleteAccount(selectedScope)} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+             <AlertDialog open={isScopeDialogOpen} onOpenChange={setIsScopeDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Ação em Conta Recorrente</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           Esta ação afetará uma conta recorrente. Você deseja aplicar a alteração apenas a esta ocorrência ou a esta e todas as futuras?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <Button variant="outline" onClick={() => handleConfirmScope('single')}>Somente esta</Button>
+                        <AlertDialogAction onClick={() => handleConfirmScope('future')}>Esta e as Futuras</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

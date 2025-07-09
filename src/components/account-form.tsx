@@ -44,6 +44,7 @@ type AccountFormProps = {
   accountType: 'payable' | 'receivable';
   account?: SerializableAccount | null;
   onSuccess: () => void;
+  scope: 'single' | 'future';
 };
 
 const payableCategories = [
@@ -63,7 +64,7 @@ const receivableCategories = [
     'Outras Receitas',
 ];
 
-export function AccountForm({ accountType, account, onSuccess }: AccountFormProps) {
+export function AccountForm({ accountType, account, onSuccess, scope = 'single' }: AccountFormProps) {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -113,42 +114,17 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
     try {
       if (isEditing) {
         // Update logic
-        await updateAccount(accountType, account.id, { ...data, companyName: company.name });
-        toast({ title: "Sucesso!", description: "Conta atualizada." });
+        await updateAccount(accountType, account.id, { ...data, companyName: company.name }, scope);
+        toast({ title: "Sucesso!", description: "Conta(s) atualizada(s)." });
       } else {
         // Create logic
         const accountData = { ...data, companyName: company.name };
         
         if (data.isRecurring && data.recurrence?.frequency) {
-            let currentDate = new Date(data.dueDate);
-            const endDate = data.recurrence.endDate ? new Date(data.recurrence.endDate) : addYears(currentDate, 5); // Limit to 5 years if no end date
-            
-            while (currentDate <= endDate) {
-                await createAccount(accountType, { ...accountData, dueDate: currentDate });
-                switch (data.recurrence.frequency) {
-                    case 'weekly':
-                        currentDate = addWeeks(currentDate, 1);
-                        break;
-                    case 'bi-weekly':
-                        currentDate = addWeeks(currentDate, 2);
-                        break;
-                    case 'monthly':
-                        currentDate = addMonths(currentDate, 1);
-                        break;
-                    case 'quarterly':
-                        currentDate = addMonths(currentDate, 3);
-                        break;
-                    case 'semiannually':
-                        currentDate = addMonths(currentDate, 6);
-                        break;
-                    case 'yearly':
-                        currentDate = addYears(currentDate, 1);
-                        break;
-                }
-            }
-             toast({ title: "Sucesso!", description: "Contas recorrentes criadas." });
+            await createAccount(accountType, accountData, true);
+            toast({ title: "Sucesso!", description: "Contas recorrentes criadas." });
         } else {
-             await createAccount(accountType, { ...accountData, dueDate: data.dueDate });
+             await createAccount(accountType, { ...accountData, dueDate: data.dueDate }, false);
              toast({ title: "Sucesso!", description: "Conta criada." });
         }
       }
@@ -215,7 +191,12 @@ export function AccountForm({ accountType, account, onSuccess }: AccountFormProp
          <FormField control={form.control} name="notes" render={({ field }) => (
             <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Detalhes adicionais sobre a conta..." {...field} /></FormControl><FormMessage /></FormItem>
         )}/>
-        {!isEditing && (
+        
+        {isEditing && account.isRecurring && (
+            <FormDescription>A edição de recorrência não está disponível. Para alterar a frequência ou data final, exclua e crie a série novamente.</FormDescription>
+        )}
+        
+        {(!isEditing) && (
           <>
             <FormField control={form.control} name="isRecurring" render={({ field }) => (
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
