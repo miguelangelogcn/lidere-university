@@ -2,7 +2,7 @@
 'use client';
 
 import { MainHeader } from "@/components/main-header";
-import { Wrench, Loader2, CalendarIcon, X } from "lucide-react";
+import { Wrench, Loader2, CalendarIcon, X, ArrowDown, ArrowUp, HandCoins, Percent } from "lucide-react";
 import { useState, useEffect, useMemo } from 'react';
 import { getCompanies } from '@/services/companyService';
 import { getFinancialRecords } from '@/services/financialService';
@@ -20,7 +20,6 @@ import { Label } from '@/components/ui/label';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
-import { DreKpiCards } from "@/components/dre-kpi-cards";
 
 function CashFlowProjectionChart({ data }: { data: { name: string, balance: number }[] }) {
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -143,6 +142,37 @@ export default function DashboardFinanceiroPage() {
     return { grossRevenue, totalExpenses, grossProfit, profitMargin };
   }, [financialData, date]);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+  
+  const kpiData = [
+    {
+        title: "Receita Bruta",
+        value: formatCurrency(dreKpiData.grossRevenue),
+        icon: ArrowUp,
+        color: "text-green-600",
+    },
+    {
+        title: "Custos e Despesas",
+        value: formatCurrency(dreKpiData.totalExpenses),
+        icon: ArrowDown,
+        color: "text-red-600",
+    },
+    {
+        title: "Lucro Bruto",
+        value: formatCurrency(dreKpiData.grossProfit),
+        icon: HandCoins,
+        color: dreKpiData.grossProfit >= 0 ? "text-foreground" : "text-red-600",
+    },
+    {
+        title: "Margem de Lucro",
+        value: `${dreKpiData.profitMargin.toFixed(2)}%`,
+        icon: Percent,
+        color: dreKpiData.profitMargin >= 0 ? "text-foreground" : "text-red-600",
+    },
+  ];
+
 
   const projectionData = useMemo(() => {
     if (!financialData || !date?.from || !selectedCompanyId) return [];
@@ -222,7 +252,22 @@ export default function DashboardFinanceiroPage() {
       <>
         <MainHeader title="Dashboard Financeiro" />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <DreKpiCards {...dreKpiData} />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {kpiData.map((kpi) => (
+                    <Card key={kpi.title}>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                            <kpi.icon className={`h-4 w-4 text-muted-foreground ${kpi.color}`} />
+                        </CardHeader>
+                        <CardContent>
+                            <div className={`text-2xl font-bold ${kpi.color}`}>
+                                {loading ? <Skeleton className="h-8 w-24" /> : kpi.value}
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
             <Card>
               <CardHeader>
                   <CardTitle>Empresa</CardTitle>
@@ -247,7 +292,7 @@ export default function DashboardFinanceiroPage() {
             <Card>
               <CardHeader>
                   <CardTitle>Filtro de Período</CardTitle>
-                  <CardDescription>Selecione o período para visualizar o fluxo de caixa.</CardDescription>
+                  <CardDescription>Selecione o período para visualizar o DRE e o fluxo de caixa.</CardDescription>
               </CardHeader>
               <CardContent>
                   <div className="grid gap-2">
