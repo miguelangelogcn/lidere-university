@@ -18,7 +18,7 @@ import {
   DollarSign,
   Building2,
   Landmark,
-  Banknote,
+  Receipt,
   LayoutDashboard,
 } from "lucide-react";
 
@@ -44,8 +44,8 @@ export const appModules: Module[] = [
     ],
   },
   {
-    id: "diretor",
-    name: "Diretor",
+    id: "gestao",
+    name: "Gestão",
     items: [
       { href: "/dashboards", icon: LayoutDashboard, label: "Dashboards" },
     ]
@@ -82,7 +82,7 @@ export const appModules: Module[] = [
     items: [
       { href: "/financeiro", icon: DollarSign, label: "Registros" },
       { href: "/contas", icon: Landmark, label: "Contas" },
-      { href: "/dividas", icon: Banknote, label: "Dívidas" },
+      { href: "/impostos", icon: Receipt, label: "Impostos" },
       { href: "/empresas", icon: Building2, label: "Empresas" },
     ]
   },
@@ -94,8 +94,8 @@ export const appModules: Module[] = [
     ]
   },
   {
-    id: "gestao",
-    name: "Gestão",
+    id: "gestao-avancada",
+    name: "Gestão Avançada",
     items: [
       { href: "/users", icon: Users, label: "Gerenciar Usuários" },
       { href: "/gerenciar-alunos", icon: GraduationCap, label: "Gerenciar Alunos" },

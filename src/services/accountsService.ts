@@ -25,6 +25,7 @@ function docToSerializableAccount(doc: DocumentData): SerializableAccount {
         notes: data.notes,
         creditCardId: data.creditCardId,
         creditCardName: data.creditCardName,
+        taxRate: data.taxRate,
         dueDate: (data.dueDate as Timestamp).toDate().toISOString(),
         createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         paidAt: data.paidAt ? (data.paidAt as Timestamp).toDate().toISOString() : undefined,
@@ -52,7 +53,28 @@ export async function getAccounts(type: 'payable' | 'receivable', companyId?: st
     }
 }
 
-export async function createAccount(type: 'payable' | 'receivable', data: Omit<Account, 'id' | 'createdAt' | 'paidAt' | 'status'>, isSeries: boolean): Promise<void> {
+export async function getPaidReceivablesForPeriod(companyId: string, startDate: Date, endDate: Date): Promise<SerializableAccount[]> {
+    try {
+        const coll = getCollection('receivable');
+        const q = query(coll, where('companyId', '==', companyId), where('status', '==', 'paid'));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return [];
+        
+        const filtered = snapshot.docs.filter(doc => {
+            const data = doc.data();
+            const paidAt = data.paidAt ? (data.paidAt as Timestamp).toDate() : null;
+            return paidAt && paidAt >= startDate && paidAt <= endDate;
+        });
+
+        return filtered.map(docToSerializableAccount);
+    } catch (error) {
+        console.error(`Error fetching paid receivables: `, error);
+        throw new Error("Falha ao buscar recebíveis pagos.");
+    }
+}
+
+
+export async function createAccount(type: 'payable' | 'receivable', data: Omit<Account, 'id' | 'createdAt' | 'paidAt' | 'status'>, isSeries: boolean): Promise<string> {
     const coll = getCollection(type);
     
     if (isSeries && data.isRecurring && data.recurrence?.frequency) {
@@ -85,7 +107,7 @@ export async function createAccount(type: 'payable' | 'receivable', data: Omit<A
             }
         }
         await batch.commit();
-
+        return recurrenceId; // Not ideal, but returning something
     } else {
         const accountData: any = {
             ...data,
@@ -96,7 +118,8 @@ export async function createAccount(type: 'payable' | 'receivable', data: Omit<A
         if (data.isRecurring && data.recurrence?.endDate) {
             accountData.recurrence.endDate = Timestamp.fromDate(new Date(data.recurrence.endDate));
         }
-        await addDoc(coll, accountData);
+        const docRef = await addDoc(coll, accountData);
+        return docRef.id;
     }
 }
 

@@ -39,6 +39,7 @@ const accountSchema = z.object({
   notes: z.string().optional(),
   isCreditCardExpense: z.boolean().default(false),
   creditCardId: z.string().optional(),
+  taxRate: z.coerce.number().min(0, "A alíquota não pode ser negativa.").optional(),
 }).refine(data => {
     if (data.isCreditCardExpense) {
         return !!data.creditCardId;
@@ -99,6 +100,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
       notes: account?.notes || '',
       isCreditCardExpense: !!account?.creditCardId,
       creditCardId: account?.creditCardId || '',
+      taxRate: account?.taxRate ?? undefined,
     },
   });
   
@@ -108,6 +110,7 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
   const isEditing = !!account;
   const categories = accountType === 'payable' ? payableCategories : receivableCategories;
   const isPayable = accountType === 'payable';
+  const isReceivable = accountType === 'receivable';
 
   useEffect(() => {
     async function fetchCompanies() {
@@ -236,6 +239,13 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
                 </FormItem>
             )}/>
         </div>
+        
+        {isReceivable && (
+            <FormField control={form.control} name="taxRate" render={({ field }) => (
+                <FormItem><FormLabel>Alíquota de Imposto (%)</FormLabel><FormControl><Input type="number" placeholder="5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} /></FormControl><FormDescription>Informe a alíquota de imposto (ex: 5 para 5%) que incide sobre esta receita. Opcional.</FormDescription><FormMessage /></FormItem>
+            )}/>
+        )}
+
         {isPayable && (
             <div className="space-y-4 rounded-md border p-4">
                 <FormField

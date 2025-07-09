@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 export type Contact = {
   id: string;
   name: string;
@@ -193,25 +183,8 @@ export type Account = {
     createdAt: any; // Firestore Timestamp
     creditCardId?: string;
     creditCardName?: string;
+    taxRate?: number; // Tax rate percentage (e.g., 5 for 5%)
 }
-
-export type Debt = {
-    id: string;
-    description: string;
-    creditor: string;
-    originalAmount: number;
-    interestRate: number; // percentage
-    companyId: string;
-    companyName?: string;
-    status: 'aberta' | 'negociada' | 'paga';
-    negotiationDetails?: {
-        numberOfInstallments: number;
-        installmentAmount: number;
-        firstInstallmentDate: any; // Firestore Timestamp
-        linkedAccountIds: string[];
-    } | null;
-    createdAt: any;
-};
 
 export type CreditCard = {
     id: string;
@@ -224,16 +197,6 @@ export type CreditCard = {
 
 export type SerializableCreditCard = CreditCard;
 
-export type SerializableDebt = Omit<Debt, 'createdAt' | 'negotiationDetails'> & {
-    createdAt: string;
-    negotiationDetails?: {
-        numberOfInstallments: number;
-        installmentAmount: number;
-        firstInstallmentDate: string;
-        linkedAccountIds: string[];
-    } | null;
-};
-
 export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidAt' | 'recurrence'> & {
     dueDate: string;
     createdAt: string;
@@ -245,6 +208,7 @@ export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidA
     };
     creditCardId?: string;
     creditCardName?: string;
+    taxRate?: number;
 };
 
 export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {
