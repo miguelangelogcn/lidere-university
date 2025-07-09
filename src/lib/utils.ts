@@ -37,3 +37,16 @@ export function getEmbedUrl(url: string): string {
     // Return the original URL if it's not a recognizable YouTube link or processing fails
     return url;
 }
+
+export function getNextInvoiceDate(dueDateDay: number): Date {
+    const today = new Date();
+    const currentDay = today.getDate();
+    let invoiceDate = new Date(today.getFullYear(), today.getMonth(), dueDateDay);
+
+    if (currentDay > dueDateDay) {
+        // If today is past the due date this month, set it for next month
+        invoiceDate.setMonth(invoiceDate.getMonth() + 1);
+    }
+
+    return invoiceDate;
+}

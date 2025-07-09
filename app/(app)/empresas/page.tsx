@@ -13,7 +13,7 @@ import {
 import { getCompanies, deleteCompany } from "@/services/companyService";
 import type { Company } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { MoreHorizontal, PlusCircle, CreditCard } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +42,7 @@ import {
 import { AddCompanyForm } from "@/components/add-company-form";
 import { EditCompanyForm } from "@/components/edit-company-form";
 import { useToast } from "@/hooks/use-toast";
+import { ManageCreditCardsDialog } from "@/components/manage-credit-cards-dialog";
 
 export default function EmpresasPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -49,6 +50,7 @@ export default function EmpresasPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCardDialogOpen, setIsCardDialogOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const { toast } = useToast();
 
@@ -157,6 +159,10 @@ export default function EmpresasPage() {
                           <DropdownMenuItem onSelect={() => { setSelectedCompany(company); setIsEditDialogOpen(true); }}>
                             Editar
                           </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => { setSelectedCompany(company); setIsCardDialogOpen(true); }}>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Gerenciar Cartões
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive" onSelect={() => { setSelectedCompany(company); setIsDeleteDialogOpen(true); }}>
                             Excluir
                           </DropdownMenuItem>
@@ -189,6 +195,12 @@ export default function EmpresasPage() {
         </DialogContent>
       </Dialog>
       
+      <Dialog open={isCardDialogOpen} onOpenChange={(open) => { if (!open) setSelectedCompany(null); setIsCardDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-3xl p-0">
+            {selectedCompany && <ManageCreditCardsDialog company={selectedCompany} />}
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { if (!open) setSelectedCompany(null); setIsDeleteDialogOpen(open); }}>
         <AlertDialogContent>
           <AlertDialogHeader>

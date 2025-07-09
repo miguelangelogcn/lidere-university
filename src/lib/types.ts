@@ -6,6 +6,7 @@
 
 
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -208,6 +209,17 @@ export type Debt = {
     } | null;
     createdAt: any;
 };
+
+export type CreditCard = {
+    id: string;
+    companyId: string;
+    cardName: string;
+    cardLimit: number;
+    invoiceDueDate: number; // Day of the month
+    cardLastFourDigits?: string;
+};
+
+export type SerializableCreditCard = CreditCard;
 
 export type SerializableDebt = Omit<Debt, 'createdAt' | 'negotiationDetails'> & {
     createdAt: string;

@@ -55,6 +55,7 @@ const payableCategories = [
     'Impostos e Taxas',
     'Fornecedores',
     'Pró-labore',
+    'Cartão de Crédito',
     'Outras Despesas',
 ];
 
