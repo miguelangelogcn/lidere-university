@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -6,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { debtSchema, type DebtFormValues, createDebt } from '@/lib/actions/debtActions';
+import { createDebt } from '@/lib/actions/debtActions';
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from 'react';
 import type { Company } from '@/lib/types';
@@ -19,6 +18,23 @@ import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { z } from 'zod';
+
+const debtFormSchema = z.object({
+  description: z.string().min(1, 'A descrição é obrigatória.'),
+  creditor: z.string().min(1, 'O credor é obrigatório.'),
+  totalAmount: z.coerce.number().positive('O valor total deve ser positivo.'),
+  companyId: z.string().min(1, 'A empresa é obrigatória.'),
+  interestRate: z.coerce.number().min(0, 'A taxa de juros não pode ser negativa.').optional().default(0),
+  isInstallment: z.boolean().default(false),
+  totalInstallments: z.coerce.number().int().min(1, "O número de parcelas deve ser pelo menos 1.").optional(),
+  firstDueDate: z.date({ required_error: 'A data da primeira parcela é obrigatória.' }),
+}).refine(data => !data.isInstallment || (data.isInstallment && data.totalInstallments), {
+  message: "O número de parcelas é obrigatório para dívidas parceladas.",
+  path: ['totalInstallments'],
+});
+
+type DebtFormValues = z.infer<typeof debtFormSchema>;
 
 
 type AddDebtFormProps = {
@@ -31,7 +47,7 @@ export function AddDebtForm({ onSuccess }: AddDebtFormProps) {
   const [loadingCompanies, setLoadingCompanies] = useState(true);
 
   const form = useForm<DebtFormValues>({
-    resolver: zodResolver(debtSchema),
+    resolver: zodResolver(debtFormSchema),
     defaultValues: {
       description: '',
       creditor: '',

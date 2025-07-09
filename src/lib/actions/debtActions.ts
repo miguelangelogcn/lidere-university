@@ -8,27 +8,26 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import type { Debt, SerializableDebt } from '../types';
 
-export const debtSchema = z.object({
+const debtActionSchema = z.object({
   description: z.string().min(1, 'A descrição é obrigatória.'),
   creditor: z.string().min(1, 'O credor é obrigatório.'),
   totalAmount: z.coerce.number().positive('O valor total deve ser positivo.'),
   companyId: z.string().min(1, 'A empresa é obrigatória.'),
-  companyName: z.string(),
+  companyName: z.string().min(1, 'O nome da empresa é obrigatório.'),
   interestRate: z.coerce.number().min(0, 'A taxa de juros não pode ser negativa.').optional().default(0),
   isInstallment: z.boolean().default(false),
   totalInstallments: z.coerce.number().int().min(1, "O número de parcelas deve ser pelo menos 1.").optional(),
-  firstDueDate: z.date({ required_error: 'A data da primeira parcela é obrigatória.' }),
+  firstDueDate: z.coerce.date({ required_error: 'A data da primeira parcela é obrigatória.' }),
 }).refine(data => !data.isInstallment || (data.isInstallment && data.totalInstallments), {
   message: "O número de parcelas é obrigatório para dívidas parceladas.",
   path: ['totalInstallments'],
 });
 
-export type DebtFormValues = z.infer<typeof debtSchema>;
-
-export async function createDebt(data: DebtFormValues) {
-    const validation = debtSchema.safeParse(data);
+export async function createDebt(data: unknown) {
+    const validation = debtActionSchema.safeParse(data);
     if (!validation.success) {
-        throw new Error('Dados inválidos.');
+        console.error("Debt validation error:", validation.error.flatten());
+        throw new Error('Dados para criação da dívida são inválidos.');
     }
 
     const {
