@@ -1,3 +1,4 @@
 'use server';
 
-// This file is intentionally left blank as its functionality has been integrated into other services.
+// This file is no longer used and has been replaced by functionality in `account-form.tsx` and `accountsService.ts`.
+// The file is kept to avoid breaking imports but is no longer used.

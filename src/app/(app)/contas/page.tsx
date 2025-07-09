@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { MainHeader } from "@/components/main-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X, CreditCard, Receipt, DollarSign, Loader2, Undo2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Check, Repeat, AlertTriangle, Building2, Filter, CalendarIcon, X, CreditCard, DollarSign, Loader2, Undo2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import type { SerializableAccount, Company } from '@/lib/types';
-import { getAccounts, deleteAccount, getPaidReceivablesForPeriod } from '@/services/accountsService';
+import { getAccounts, updateAccount, deleteAccount } from '@/services/accountsService';
 import { getCompanies } from '@/services/companyService';
 import { AccountForm } from '@/components/account-form';
 import { format, isPast, isToday, startOfMonth, endOfMonth, addDays, addMonths } from 'date-fns';
@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { markAccountAsPaid, markAccountAsPending } from '@/lib/actions/accountActions';
+
 
 const AccountsManager = ({ accountType }: { accountType: 'payable' | 'receivable' }) => {
     const [accounts, setAccounts] = useState<SerializableAccount[]>([]);
