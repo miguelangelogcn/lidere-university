@@ -1,8 +1,9 @@
 
 'use server';
 
-import { getPaidReceivablesForPeriod } from "@/services/accountsService";
+import { getPaidReceivablesForPeriod, createAccount } from "@/services/accountsService";
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { revalidatePath } from 'next/cache';
 
 export async function calculateTaxForPeriod(companyId: string, year: number, month: number) {
     if (!companyId || !year || !month) {
@@ -30,5 +31,30 @@ export async function calculateTaxForPeriod(companyId: string, year: number, mon
         console.error("Error calculating tax for period:", error);
         const message = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
         return { success: false, message, taxAmount: 0 };
+    }
+}
+
+export async function createTaxPayable(data: {
+    description: string;
+    dueDate: Date;
+    amount: number;
+    companyId: string;
+    companyName: string;
+}) {
+    try {
+        await createAccount('payable', {
+            ...data,
+            category: 'Impostos e Taxas',
+            isRecurring: false,
+        }, false);
+
+        revalidatePath('/contas');
+
+        return { success: true, message: 'Conta de imposto gerada com sucesso!' };
+
+    } catch (error) {
+        console.error('Error creating tax payable account:', error);
+        const message = error instanceof Error ? error.message : "Ocorreu um erro desconhecido ao gerar a conta de imposto.";
+        return { success: false, message };
     }
 }
