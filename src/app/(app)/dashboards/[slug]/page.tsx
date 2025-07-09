@@ -1,4 +1,3 @@
-
 'use client';
 
 import { MainHeader } from "@/components/main-header";
@@ -93,7 +92,7 @@ function FinancialDashboard() {
                 
                 const companyRecords = records.filter(r => r.companyId === selectedCompanyId);
                 const companyReceivables = receivables.filter(r => r.companyId === selectedCompanyId);
-                const companyPayables = payables.filter(r => r.companyId === selectedCompanyId);
+                const companyPayables = payables.filter(p => p.companyId === selectedCompanyId);
 
                 setFinancialData({
                     records: companyRecords,
