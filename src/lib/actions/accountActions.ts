@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db } from "@/lib/firebase";
@@ -32,7 +31,7 @@ export async function markAccountAsPaid(
             description: `${type === 'payable' ? 'Pagamento' : 'Recebimento'} de conta: ${accountData.description}`,
             amount: accountData.amount,
             type: type === 'payable' ? 'expense' : 'income',
-            date: accountData.paidAt?.toDate() || new Date(),
+            date: new Date(),
             category: accountData.category,
             companyId: accountData.companyId,
             companyName: accountData.companyName,
