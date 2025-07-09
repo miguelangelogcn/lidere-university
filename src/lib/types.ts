@@ -1,4 +1,5 @@
 
+
 export type Contact = {
   id: string;
   name: string;
@@ -187,7 +188,27 @@ export type Account = {
     creditCardId?: string;
     creditCardName?: string;
     taxRate?: number; // Tax rate percentage (e.g., 5 for 5%)
+    sourceDebtId?: string;
 }
+
+export type Debt = {
+  id: string;
+  description: string;
+  creditor: string;
+  companyId: string;
+  companyName: string;
+  totalAmount: number;
+  interestRate: number; // Annual percentage rate
+  isInstallment: boolean;
+  totalInstallments: number;
+  paidInstallments: number; // This will be calculated from the payables status
+  status: 'active' | 'paid_off';
+  createdAt: any; // Firestore Timestamp
+};
+
+export type SerializableDebt = Omit<Debt, 'createdAt'> & {
+  createdAt: string;
+};
 
 export type CreditCard = {
     id: string;
@@ -213,6 +234,7 @@ export type SerializableAccount = Omit<Account, 'dueDate' | 'createdAt' | 'paidA
     creditCardId?: string;
     creditCardName?: string;
     taxRate?: number;
+    sourceDebtId?: string;
 };
 
 export type SerializableFinancialRecord = Omit<FinancialRecord, 'date' | 'createdAt'> & {

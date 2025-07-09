@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -26,6 +27,7 @@ function docToSerializableAccount(doc: DocumentData): SerializableAccount {
         creditCardId: data.creditCardId,
         creditCardName: data.creditCardName,
         taxRate: data.taxRate,
+        sourceDebtId: data.sourceDebtId,
         dueDate: (data.dueDate as Timestamp).toDate().toISOString(),
         expectedPaymentDate: data.expectedPaymentDate ? (data.expectedPaymentDate as Timestamp).toDate().toISOString() : null,
         createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
