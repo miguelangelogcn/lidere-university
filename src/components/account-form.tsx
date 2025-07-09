@@ -24,6 +24,7 @@ import type { Company, SerializableAccount, CreditCard } from '@/lib/types';
 import { Checkbox } from './ui/checkbox';
 import { calculateTaxForPeriod } from '@/lib/actions/taxActions';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 
 
 const baseSchema = z.object({
@@ -496,3 +497,5 @@ export function AccountForm({ accountType, account, onSuccess, scope = 'single' 
     </Form>
   );
 }
+
+    
