@@ -1,32 +1,34 @@
+
 'use server';
 
-import { createAccount } from "@/services/accountsService";
-import { revalidatePath } from "next/cache";
+import { getPaidReceivablesForPeriod } from "@/services/accountsService";
+import { startOfMonth, endOfMonth } from 'date-fns';
 
-interface TaxPayableData {
-    amount: number;
-    description: string;
-    dueDate: Date;
-    companyId: string;
-    companyName: string;
-}
-
-export async function createTaxPayable(data: TaxPayableData) {
+export async function calculateTaxForPeriod(companyId: string, year: number, month: number) {
+    if (!companyId || !year || !month) {
+        return { success: false, message: 'Parâmetros inválidos.', taxAmount: 0 };
+    }
+    
     try {
-        await createAccount('payable', {
-            ...data,
-            category: 'Impostos e Taxas',
-            isRecurring: false,
-            notes: 'Gerado automaticamente pela funcionalidade de cálculo de impostos.'
-        }, false);
+        const startDate = startOfMonth(new Date(year, month - 1, 1));
+        const endDate = endOfMonth(new Date(year, month - 1, 1));
         
-        revalidatePath('/contas');
-        revalidatePath('/impostos');
+        const paidReceivables = await getPaidReceivablesForPeriod(companyId, startDate, endDate);
         
-        return { success: true, message: 'Conta de imposto a pagar criada com sucesso!' };
+        if (paidReceivables.length === 0) {
+            return { success: true, message: 'Nenhuma receita encontrada para o período.', taxAmount: 0 };
+        }
+
+        const totalTax = paidReceivables.reduce((acc, r) => {
+            const tax = r.taxRate ? (r.amount * r.taxRate) / 100 : 0;
+            return acc + tax;
+        }, 0);
+
+        return { success: true, taxAmount: totalTax, message: 'Cálculo realizado.' };
 
     } catch (error) {
-        console.error("Error creating tax payable:", error);
-        return { success: false, message: 'Falha ao criar a conta de imposto a pagar.' };
+        console.error("Error calculating tax for period:", error);
+        const message = error instanceof Error ? error.message : "Ocorreu um erro desconhecido.";
+        return { success: false, message, taxAmount: 0 };
     }
 }
