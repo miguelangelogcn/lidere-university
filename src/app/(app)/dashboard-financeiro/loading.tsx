@@ -23,15 +23,17 @@ export default function FinancialDashboardLoading() {
             ))}
         </div>
         
-        <Card>
-            <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-            <CardContent><Skeleton className="h-10 w-[300px]" /></CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+            </Card>
+             <Card>
+                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+                <CardContent><Skeleton className="h-10 w-full" /></CardContent>
+            </Card>
+        </div>
 
-        <Card>
-            <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-            <CardContent><Skeleton className="h-10 w-[300px]" /></CardContent>
-        </Card>
 
         <Card>
             <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>

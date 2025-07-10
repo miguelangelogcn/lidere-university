@@ -21,6 +21,7 @@ import {
   Landmark,
   Receipt,
   LayoutDashboard,
+  AreaChart,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -45,10 +46,13 @@ export const appModules: Module[] = [
     ],
   },
   {
-    id: "gestao",
+    id: "diretoria",
     name: "Diretoria",
     items: [
-      { href: "/dashboards", icon: LayoutDashboard, label: "Galeria de Dashboards" },
+      { href: "/dashboard-financeiro", icon: DollarSign, label: "Dashboard Financeiro" },
+      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
+      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
+      { href: "/dashboard-conteudos", icon: GraduationCap, label: "Dashboard de Conteúdos" },
     ]
   },
   {
