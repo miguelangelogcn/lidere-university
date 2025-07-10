@@ -59,7 +59,6 @@ export const appModules: Module[] = [
     id: "vendas",
     name: "Vendas",
     items: [
-      { href: "/analytics", icon: LineChart, label: "Painel de Vendas" },
       { href: "/pipeline", icon: Briefcase, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },
       { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },

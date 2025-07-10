@@ -250,15 +250,11 @@ function FinancialDashboard() {
   };
   
   if (!hasMounted) {
-    return (
-        <div className="flex flex-1 items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-    )
+    return <FinancialDashboardLoading />;
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {kpiData.map((kpi) => (
                 <Card key={kpi.title}>
@@ -380,7 +376,7 @@ function FinancialDashboard() {
               )}
           </CardContent>
         </Card>
-    </div>
+    </main>
   );
 }
 
@@ -393,3 +389,4 @@ export default function DashboardFinanceiroPage() {
         </>
     )
 }
+
