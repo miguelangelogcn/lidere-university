@@ -22,6 +22,7 @@ import {
   Receipt,
   LayoutDashboard,
   AreaChart,
+  Settings,
 } from "lucide-react";
 
 export type ModuleItem = {
@@ -52,7 +53,7 @@ export const appModules: Module[] = [
      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
      { href: "/dashboard-conteudos", icon: LayoutDashboard, label: "Dashboard de Conteúdos" },
-     { href: "/relatorio-financeiro", icon: LineChart, label: "Relatório Financeiro" },
+     { href: "/dashboard-financeiro", icon: LineChart, label: "Dashboard Financeiro" },
     ]
   },
   {
@@ -108,6 +109,7 @@ export const appModules: Module[] = [
       { href: "/products", icon: Package, label: "Gerenciar Produtos" },
       { href: "/email-templates", icon: Mail, label: "Gerenciar Emails" },
       { href: "/automacoes", icon: Workflow, label: "Automações" },
+      { href: "/pipeline", icon: Settings, label: "Gerenciar Funis" },
     ],
   }
 ];
