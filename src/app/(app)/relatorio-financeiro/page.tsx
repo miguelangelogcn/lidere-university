@@ -205,5 +205,3 @@ const FinancialDashboard = () => {
 };
 
 export default FinancialDashboard;
-
-    
