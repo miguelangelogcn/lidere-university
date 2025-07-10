@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation';
 import { Logo } from "@/components/logo";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    console.log('Forcing layout re-render to clear route cache.');
     const { user } = useAuth();
     const pathname = usePathname();
 
