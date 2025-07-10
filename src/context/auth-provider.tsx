@@ -31,14 +31,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const appUser = { id: userDocSnap.id, ...userDocSnap.data() } as any;
 
           // Calculate final permissions
-          const finalPermissions = new Set<string>(appUser.permissions || []);
+          let finalPermissions = new Set<string>(appUser.permissions || []);
           
           if (appUser.roleId) {
               const roleDocRef = doc(db, 'roles', appUser.roleId);
               const roleSnap = await getDoc(roleDocRef);
               if (roleSnap.exists()) {
                   const roleData = roleSnap.data() as Role;
-                  (roleData.permissions || []).forEach(p => finalPermissions.add(p));
+                  // Always combine role permissions with any custom permissions
+                  const rolePermissions = roleData.permissions || [];
+                  rolePermissions.forEach(p => finalPermissions.add(p));
               }
           }
           

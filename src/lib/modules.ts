@@ -49,6 +49,7 @@ export const appModules: Module[] = [
     name: "Diretoria",
     items: [
       { href: "/dashboards", icon: LayoutDashboard, label: "Dashboards" },
+      { href: "/dashboards/financeiro", icon: DollarSign, label: "Dashboard Financeiro"},
     ]
   },
   {

@@ -20,6 +20,7 @@ import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { useParams } from 'next/navigation';
+import { useAuth } from "@/context/auth-provider";
 
 function CashFlowProjectionChart({ data }: { data: { name: string, balance: number }[] }) {
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -57,8 +58,6 @@ function FinancialDashboard() {
   const [date, setDate] = useState<DateRange | undefined>();
 
   useEffect(() => {
-    // This effect runs once on mount to set the initial date range.
-    // It's safe because it doesn't depend on server-rendered values and prevents hydration errors.
     setDate({
         from: startOfMonth(new Date()),
         to: endOfMonth(addMonths(new Date(), 11)),
@@ -379,8 +378,26 @@ function FinancialDashboard() {
 export default function DashboardDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug || 'Dashboard';
+  const { user } = useAuth();
   
   if (slug === 'financeiro') {
+      const hasPermission = user?.permissions?.includes('/dashboards/financeiro');
+      if (!hasPermission) {
+          return (
+            <>
+                <MainHeader title="Acesso Negado" />
+                <main className="flex flex-1 flex-col items-center justify-center gap-4 p-4 md:gap-8 md:p-8">
+                    <div className="text-center">
+                        <Wrench className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h2 className="mt-4 text-2xl font-semibold">Acesso Negado</h2>
+                        <p className="mt-2 text-muted-foreground">
+                            Você não tem permissão para visualizar este dashboard.
+                        </p>
+                    </div>
+                </main>
+            </>
+          );
+      }
       return (
           <>
             <MainHeader title="Dashboard Financeiro" />
