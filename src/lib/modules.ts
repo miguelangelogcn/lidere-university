@@ -109,7 +109,6 @@ export const appModules: Module[] = [
       { href: "/products", icon: Package, label: "Gerenciar Produtos" },
       { href: "/email-templates", icon: Mail, label: "Gerenciar Emails" },
       { href: "/automacoes", icon: Workflow, label: "Automações" },
-      { href: "/pipeline/manage", icon: Settings, label: "Gerenciar Funis" },
     ],
   }
 ];

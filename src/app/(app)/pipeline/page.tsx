@@ -12,7 +12,7 @@ export default function PipelinePage() {
   const { user } = useAuth();
   const [isManageDialogOpen, setIsManageDialogOpen] = useState(false);
 
-  // The permission to see the manage button is '/pipeline'
+  // A permissão para ver o botão é a mesma da página.
   const canManagePipelines = user?.permissions?.includes('/pipeline');
 
   return (

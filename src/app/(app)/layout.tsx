@@ -13,17 +13,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isModuleAccessible = (moduleItems: any[]) => {
         if (!user?.permissions) return false;
-        return moduleItems.some(item => isItemVisible(item));
+        return moduleItems.some(item => user.permissions.includes(item.href));
     };
-
-    const isItemVisible = (item: any) => {
-        if (!user?.permissions) return false;
-        // Don't show the 'Gerenciar Funis' item in the sidebar, it's just for permissions.
-        if (item.label === "Gerenciar Funis") {
-            return false;
-        }
-        return user.permissions.includes(item.href);
-    }
 
     return (
         <AuthGuard>
@@ -40,7 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                         <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground">{module.name}</h3>
                                     </SidebarMenuItem>
                                     {module.items.map(item => (
-                                         user?.permissions?.includes(item.href) && isItemVisible(item) && (
+                                         user?.permissions?.includes(item.href) && (
                                             <SidebarMenuItem key={item.href}>
                                                 <Link href={item.href}>
                                                     <SidebarMenuButton isActive={pathname === item.href}>
