@@ -20,6 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import FinancialDashboardLoading from './loading';
 
 type DreData = {
     grossRevenue: number;
@@ -97,7 +98,7 @@ const FinancialDashboard = () => {
                     const monthEnd = endOfMonth(targetMonth);
 
                     const receitas = allReceivables
-                        .filter(r => isSameMonth(new Date(r.expectedPaymentDate || r.dueDate), targetMonth))
+                        .filter(r => r.expectedPaymentDate && isSameMonth(new Date(r.expectedPaymentDate), targetMonth))
                         .reduce((acc, r) => acc + r.amount, 0);
 
                     const despesas = allPayables
@@ -202,23 +203,5 @@ const FinancialDashboard = () => {
         </>
     );
 };
-
-const FinancialDashboardLoading = () => (
-    <>
-      <MainHeader title="Dashboard Financeiro" />
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-             <Card className="lg:col-span-1"><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
-             <Card className="lg:col-span-2"><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent className="flex gap-2"><Skeleton className="h-10 w-48" /><Skeleton className="h-10 w-24" /><Skeleton className="h-10 w-24" /></CardContent></Card>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i}><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-5 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /></CardContent></Card>
-            ))}
-        </div>
-        <Card><CardHeader><Skeleton className="h-6 w-48" /></CardHeader><CardContent><Skeleton className="h-[350px] w-full" /></CardContent></Card>
-      </main>
-    </>
-);
 
 export default FinancialDashboard;
