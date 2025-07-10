@@ -1,4 +1,3 @@
-
 'use client';
 import { MainHeader } from "@/components/main-header";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,7 @@ const dashboards = [
     title: "Financeiro",
     description: "Visão geral de fluxo de caixa, contas a pagar e a receber.",
     icon: DollarSign,
-    href: "/dashboard",
+    href: "/dashboards/financeiro",
   },
 ];
 

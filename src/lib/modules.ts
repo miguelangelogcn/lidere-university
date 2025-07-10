@@ -41,7 +41,7 @@ export const appModules: Module[] = [
     id: "geral",
     name: "Geral",
     items: [
-      { href: "/dashboard", icon: Home, label: "Dashboard" },
+      { href: "/inicio", icon: Home, label: "Início" },
     ],
   },
   {
