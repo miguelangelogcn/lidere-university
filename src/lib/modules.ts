@@ -53,7 +53,7 @@ export const appModules: Module[] = [
      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
      { href: "/dashboard-conteudos", icon: LayoutDashboard, label: "Dashboard de Conteúdos" },
-     { href: "/dashboard-financeiro", icon: LineChart, label: "Dashboard Financeiro" },
+     { href: "/relatorio-financeiro", icon: LineChart, label: "Relatório Financeiro" },
     ]
   },
   {
@@ -109,7 +109,7 @@ export const appModules: Module[] = [
       { href: "/products", icon: Package, label: "Gerenciar Produtos" },
       { href: "/email-templates", icon: Mail, label: "Gerenciar Emails" },
       { href: "/automacoes", icon: Workflow, label: "Automações" },
-      { href: "/pipeline", icon: Settings, label: "Gerenciar Funis" },
+      { href: "/pipeline/manage", icon: Settings, label: "Gerenciar Funis" },
     ],
   }
 ];
