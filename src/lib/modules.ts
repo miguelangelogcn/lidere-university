@@ -1,4 +1,4 @@
-
+si 
 import {
   Briefcase,
   Contact,
@@ -49,10 +49,10 @@ export const appModules: Module[] = [
     id: "diretoria",
     name: "Diretoria",
     items: [
-      { href: "/dashboard-financeiro", icon: DollarSign, label: "Dashboard Financeiro" },
-      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
-      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
-      { href: "/dashboard-conteudos", icon: GraduationCap, label: "Dashboard de Conteúdos" },
+ { href: "/src/app/(app)/dashboard-financeiro", icon: DollarSign, label: "Dashboard Financeiro" },
+ { href: "/src/app/(app)/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
+ { href: "/src/app/(app)/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
+ { href: "/src/app/(app)/dashboard-conteudos", icon: GraduationCap, label: "Dashboard de Conteúdos" },
     ]
   },
   {
@@ -61,7 +61,7 @@ export const appModules: Module[] = [
     items: [
       { href: "/pipeline", icon: Briefcase, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },
-      { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
+      { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" }, // Corrected href
     ],
   },
   {
