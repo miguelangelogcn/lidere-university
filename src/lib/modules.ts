@@ -41,22 +41,21 @@ export const appModules: Module[] = [
     id: "geral",
     name: "Geral",
     items: [
-      { href: "/inicio", icon: Home, label: "Início" },
+      { href: "/dashboard", icon: Home, label: "Dashboard" },
     ],
   },
   {
     id: "gestao",
     name: "Diretoria",
     items: [
-      { href: "/dashboards", icon: LayoutDashboard, label: "Dashboards" },
-      { href: "/dashboard-financeiro", icon: DollarSign, label: "Dashboard Financeiro"},
+      { href: "/dashboards", icon: LayoutDashboard, label: "Galeria de Dashboards" },
     ]
   },
   {
     id: "vendas",
     name: "Vendas",
     items: [
-      { href: "/analytics", icon: LineChart, label: "Painel de Desempenho" },
+      { href: "/analytics", icon: LineChart, label: "Painel de Vendas" },
       { href: "/pipeline", icon: Briefcase, label: "Funil de Vendas" },
       { href: "/contacts", icon: Contact, label: "Contatos" },
       { href: "/smart-email", icon: Sparkles, label: "Email Inteligente", badge: "AI" },
