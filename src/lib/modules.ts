@@ -50,7 +50,7 @@ export const appModules: Module[] = [
     name: "Diretoria",
     items: [
      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
-     { href: "/relatorio-financeiro", icon: LineChart, label: "Relatório Financeiro" },
+     { href: "/dashboard-vendas", icon: LineChart, label: "Relatório Financeiro" },
      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
      { href: "/dashboard-conteudos", icon: LayoutDashboard, label: "Dashboard de Conteúdos" },
     ]
