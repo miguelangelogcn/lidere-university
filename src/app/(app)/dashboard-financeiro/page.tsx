@@ -20,6 +20,8 @@ import { Label } from '@/components/ui/label';
 import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
+import FinancialDashboardLoading from "./loading";
+
 
 function CashFlowProjectionChart({ data }: { data: { name: string, balance: number }[] }) {
     const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -389,4 +391,3 @@ export default function DashboardFinanceiroPage() {
         </>
     )
 }
-
