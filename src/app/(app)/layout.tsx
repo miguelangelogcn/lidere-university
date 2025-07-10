@@ -13,21 +13,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isModuleAccessible = (moduleItems: any[]) => {
         if (!user?.permissions) return false;
-        return moduleItems.some(item => {
-             // Handle the specific case of the renamed dashboard
-            if (item.href === '/relatorio-financeiro') {
-                return user.permissions.includes('/relatorio-financeiro') || user.permissions.includes('/dashboard-financeiro');
-            }
-            return user.permissions.includes(item.href)
-        });
+        return moduleItems.some(item => user.permissions.includes(item.href));
     };
 
     const isItemVisible = (item: any) => {
         if (!user?.permissions) return false;
-        // Handle the specific case of the renamed dashboard
-        if (item.href === '/relatorio-financeiro') {
-            return user.permissions.includes('/relatorio-financeiro') || user.permissions.includes('/dashboard-financeiro');
-        }
         return user.permissions.includes(item.href);
     }
 

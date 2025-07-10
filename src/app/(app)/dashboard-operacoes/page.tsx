@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { MainHeader } from "@/components/main-header";
