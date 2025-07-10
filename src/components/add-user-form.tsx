@@ -90,11 +90,11 @@ export function AddUserForm({ onUserAdded, roles }: AddUserFormProps) {
       onUserAdded();
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
-            setError('Este email já está em uso.');
+            setError('Este email já está em uso por outro usuário.');
         } else if (err.code === 'auth/weak-password') {
             setError('A senha deve ter pelo menos 6 caracteres.');
         } else {
-            setError('Falha ao criar conta. Tente novamente.');
+            setError('Falha ao criar conta. Verifique os dados e tente novamente.');
         }
       console.error(err);
     } finally {
