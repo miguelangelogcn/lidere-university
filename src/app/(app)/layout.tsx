@@ -18,11 +18,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isItemVisible = (item: any) => {
         if (!user?.permissions) return false;
-        // This logic handles the case where the route was changed but the permission wasn't.
-        // It allows the user to see the new route if they have permission for the old one.
-        if (item.href === '/relatorio-financeiro') {
-            return user.permissions.includes('/relatorio-financeiro') || user.permissions.includes('/dashboard-financeiro');
-        }
         return user.permissions.includes(item.href);
     }
 
