@@ -29,11 +29,6 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
     transform: CSS.Transform.toString(transform),
   };
 
-  const handleDeleteClick = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    onDelete();
-  }
-
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Card
@@ -67,7 +62,7 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
             >
                 <DropdownMenuItem 
                     className="text-destructive" 
-                    onSelect={handleDeleteClick}
+                    onSelect={onDelete}
                 >
                     Excluir
                 </DropdownMenuItem>
