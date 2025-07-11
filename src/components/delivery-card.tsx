@@ -29,21 +29,26 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
     transform: CSS.Transform.toString(transform),
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <Card
-        onClick={onClick}
-        className={`mb-4 cursor-grab active:cursor-grabbing relative group ${
+        className={`mb-4 relative group ${
           isDragging ? 'opacity-50 shadow-lg' : 'shadow-sm'
         }`}
       >
-        <CardHeader className="p-4">
-          <CardTitle className="text-base font-semibold">{onboardingProcess.contactName}</CardTitle>
-          <CardDescription className="flex items-center gap-2 pt-1 text-xs">
-            <Package className="h-3 w-3" />
-            {onboardingProcess.productName}
-          </CardDescription>
-        </CardHeader>
+        <div {...listeners} onClick={onClick} className="cursor-grab p-4 block">
+            <CardTitle className="text-base font-semibold">{onboardingProcess.contactName}</CardTitle>
+            <CardDescription className="flex items-center gap-2 pt-1 text-xs">
+                <Package className="h-3 w-3" />
+                {onboardingProcess.productName}
+            </CardDescription>
+        </div>
+
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button 
