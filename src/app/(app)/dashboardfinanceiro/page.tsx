@@ -4,7 +4,7 @@
 import { MainHeader } from "@/components/main-header";
 import { Wrench } from "lucide-react";
 
-export default function RelatorioFinanceiroPage() {
+export default function DashboardFinanceiroPage() {
   return (
     <>
       <MainHeader title="Relatório Financeiro" />
