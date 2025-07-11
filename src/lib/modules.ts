@@ -52,7 +52,8 @@ export const appModules: Module[] = [
     items: [
      { href: "/dashboard-vendas", icon: AreaChart, label: "Dashboard de Vendas" },
      { href: "/dashboard-operacoes", icon: ClipboardCheck, label: "Dashboard de Operações" },
-     { href: "/dashboard-financeiro", icon: LineChart, label: "Dashboard Financeiro" },
+     { href: "/dashboard-conteudos", icon: LayoutDashboard, label: "Dashboard de Conteúdos" },
+     { href: "/relatorio-financeiro", icon: LineChart, label: "Relatório Financeiro" },
     ]
   },
   {
