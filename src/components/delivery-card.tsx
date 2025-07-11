@@ -29,6 +29,11 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
     transform: CSS.Transform.toString(transform),
   };
 
+  const handleDeleteClick = (e: Event) => {
+    e.stopPropagation();
+    onDelete();
+  }
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Card
@@ -50,6 +55,9 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
                     variant="ghost" 
                     size="icon" 
                     className="absolute top-1 right-1 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}
                     onPointerDown={(e) => {
                         e.stopPropagation();
                     }}
@@ -58,10 +66,10 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
                     <span className="sr-only">Ações do Onboarding</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" onPointerDown={(e) => e.stopPropagation()}>
                 <DropdownMenuItem 
                     className="text-destructive" 
-                    onSelect={onDelete}
+                    onSelect={handleDeleteClick}
                 >
                     Excluir
                 </DropdownMenuItem>
