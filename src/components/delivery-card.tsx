@@ -55,18 +55,16 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
                     variant="ghost" 
                     size="icon" 
                     className="absolute top-1 right-1 h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                    }}
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                    }}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Ações do Onboarding</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onPointerDown={(e) => e.stopPropagation()}>
+            <DropdownMenuContent 
+                align="end"
+                onPointerDown={(e) => e.stopPropagation()}
+            >
                 <DropdownMenuItem 
                     className="text-destructive" 
                     onSelect={handleDeleteClick}
