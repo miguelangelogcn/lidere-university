@@ -1,4 +1,5 @@
 
+
 'use client';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarInset } from "@/components/ui/sidebar"
 import { appModules } from "@/lib/modules";
@@ -54,3 +55,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </AuthGuard>
     )
 }
+
