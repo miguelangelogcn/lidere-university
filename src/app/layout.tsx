@@ -4,7 +4,6 @@ import { Inter, Lexend } from 'next/font/google'
 import "./globals.css"
 import { Toaster } from '@/components/ui/toaster'
 import DynamicAuthProvider from '@/components/dynamic-auth-provider'
-import { EnvCheckWrapper } from '@/components/env-check-wrapper'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-body' })
 const lexend = Lexend({ subsets: ['latin'], variable: '--font-headline'})
@@ -22,12 +21,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.variable} ${lexend.variable}`}>
-        <EnvCheckWrapper>
-          <DynamicAuthProvider>
-            {children}
-            <Toaster />
-          </DynamicAuthProvider>
-        </EnvCheckWrapper>
+        <DynamicAuthProvider>
+          {children}
+          <Toaster />
+        </DynamicAuthProvider>
       </body>
     </html>
   )
