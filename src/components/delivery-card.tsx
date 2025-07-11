@@ -29,7 +29,7 @@ export function DeliveryCard({ onboardingProcess, onClick, onDelete }: Onboardin
     transform: CSS.Transform.toString(transform),
   };
 
-  const handleDeleteClick = (e: Event) => {
+  const handleDeleteClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     onDelete();
   }
