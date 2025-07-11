@@ -1,6 +1,6 @@
 
 import type {NextConfig} from 'next';
-
+// Forçando a recompilação do projeto
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
